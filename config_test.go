@@ -22,7 +22,7 @@ func TestCanHaveBody(t *testing.T) {
 		{"OPTIONS", true},
 	}
 	for _, e := range expectations {
-		if r := canHaveBody(e.in); r != e.out {
+		if r := CanHaveBody(e.in); r != e.out {
 			t.Error(e.in, e.out, r)
 		}
 	}
@@ -42,7 +42,7 @@ func TestAllowedHttpMethod(t *testing.T) {
 		{"TRUNCATE", false},
 	}
 	for _, e := range expectations {
-		if r := allowedHTTPMethod(e.in); r != e.out {
+		if r := AllowedHTTPMethod(e.in); r != e.out {
 			t.Logf("Expected f(%v) = %v, but got %v", e.in, e.out, r)
 			t.Fail()
 		}
@@ -53,14 +53,14 @@ func TestCheckArgs(t *testing.T) {
 	invalidNumberOfReqs := uint64(0)
 	smallTestDuration := 99 * time.Millisecond
 	negativeTimeoutDuration := -1 * time.Second
-	noHeaders := new(headersList)
+	noHeaders := new(HeadersList)
 	zeroRate := uint64(0)
 	expectations := []struct {
-		in  config
+		in  Config
 		out error
 	}{
 		{
-			config{
+			Config{
 				numConns: defaultNumberOfConns,
 				numReqs:  &defaultNumberOfReqs,
 				duration: &defaultTestDuration,
@@ -69,12 +69,12 @@ func TestCheckArgs(t *testing.T) {
 				timeout:  defaultTimeout,
 				method:   "GET",
 				body:     "",
-				format:   knownFormat("plain-text"),
+				format:   KnownFormat("plain-text"),
 			},
 			errInvalidURL,
 		},
 		{
-			config{
+			Config{
 				numConns: 0,
 				numReqs:  &defaultNumberOfReqs,
 				duration: &defaultTestDuration,
@@ -83,12 +83,12 @@ func TestCheckArgs(t *testing.T) {
 				timeout:  defaultTimeout,
 				method:   "GET",
 				body:     "",
-				format:   knownFormat("plain-text"),
+				format:   KnownFormat("plain-text"),
 			},
 			errInvalidNumberOfConns,
 		},
 		{
-			config{
+			Config{
 				numConns: defaultNumberOfConns,
 				numReqs:  &invalidNumberOfReqs,
 				duration: &defaultTestDuration,
@@ -97,12 +97,12 @@ func TestCheckArgs(t *testing.T) {
 				timeout:  defaultTimeout,
 				method:   "GET",
 				body:     "",
-				format:   knownFormat("plain-text"),
+				format:   KnownFormat("plain-text"),
 			},
 			errInvalidNumberOfRequests,
 		},
 		{
-			config{
+			Config{
 				numConns: defaultNumberOfConns,
 				numReqs:  nil,
 				duration: &smallTestDuration,
@@ -111,12 +111,12 @@ func TestCheckArgs(t *testing.T) {
 				timeout:  defaultTimeout,
 				method:   "GET",
 				body:     "",
-				format:   knownFormat("plain-text"),
+				format:   KnownFormat("plain-text"),
 			},
 			errInvalidTestDuration,
 		},
 		{
-			config{
+			Config{
 				numConns: defaultNumberOfConns,
 				numReqs:  &defaultNumberOfReqs,
 				duration: &defaultTestDuration,
@@ -125,12 +125,12 @@ func TestCheckArgs(t *testing.T) {
 				timeout:  negativeTimeoutDuration,
 				method:   "GET",
 				body:     "",
-				format:   knownFormat("plain-text"),
+				format:   KnownFormat("plain-text"),
 			},
 			errNegativeTimeout,
 		},
 		{
-			config{
+			Config{
 				numConns: defaultNumberOfConns,
 				numReqs:  &defaultNumberOfReqs,
 				duration: &defaultTestDuration,
@@ -139,12 +139,12 @@ func TestCheckArgs(t *testing.T) {
 				timeout:  defaultTimeout,
 				method:   "GET",
 				body:     "BODY",
-				format:   knownFormat("plain-text"),
+				format:   KnownFormat("plain-text"),
 			},
 			errBodyNotAllowed,
 		},
 		{
-			config{
+			Config{
 				numConns:     defaultNumberOfConns,
 				numReqs:      &defaultNumberOfReqs,
 				duration:     &defaultTestDuration,
@@ -153,12 +153,12 @@ func TestCheckArgs(t *testing.T) {
 				timeout:      defaultTimeout,
 				method:       "GET",
 				bodyFilePath: "testbody.txt",
-				format:       knownFormat("plain-text"),
+				format:       KnownFormat("plain-text"),
 			},
 			errBodyNotAllowed,
 		},
 		{
-			config{
+			Config{
 				numConns: defaultNumberOfConns,
 				numReqs:  &defaultNumberOfReqs,
 				duration: &defaultTestDuration,
@@ -167,12 +167,12 @@ func TestCheckArgs(t *testing.T) {
 				timeout:  defaultTimeout,
 				method:   "GET",
 				body:     "",
-				format:   knownFormat("plain-text"),
+				format:   KnownFormat("plain-text"),
 			},
 			nil,
 		},
 		{
-			config{
+			Config{
 				numConns: defaultNumberOfConns,
 				numReqs:  &defaultNumberOfReqs,
 				duration: &defaultTestDuration,
@@ -183,12 +183,12 @@ func TestCheckArgs(t *testing.T) {
 				body:     "",
 				certPath: "test_cert.pem",
 				keyPath:  "",
-				format:   knownFormat("plain-text"),
+				format:   KnownFormat("plain-text"),
 			},
 			errNoPathToKey,
 		},
 		{
-			config{
+			Config{
 				numConns: defaultNumberOfConns,
 				numReqs:  &defaultNumberOfReqs,
 				duration: &defaultTestDuration,
@@ -199,12 +199,12 @@ func TestCheckArgs(t *testing.T) {
 				body:     "",
 				certPath: "",
 				keyPath:  "test_key.pem",
-				format:   knownFormat("plain-text"),
+				format:   KnownFormat("plain-text"),
 			},
 			errNoPathToCert,
 		},
 		{
-			config{
+			Config{
 				numConns: defaultNumberOfConns,
 				numReqs:  &defaultNumberOfReqs,
 				duration: &defaultTestDuration,
@@ -213,12 +213,12 @@ func TestCheckArgs(t *testing.T) {
 				timeout:  defaultTimeout,
 				method:   "GET",
 				rate:     &zeroRate,
-				format:   knownFormat("plain-text"),
+				format:   KnownFormat("plain-text"),
 			},
 			errZeroRate,
 		},
 		{
-			config{
+			Config{
 				numConns:     defaultNumberOfConns,
 				numReqs:      &defaultNumberOfReqs,
 				duration:     &defaultTestDuration,
@@ -228,17 +228,17 @@ func TestCheckArgs(t *testing.T) {
 				method:       "POST",
 				body:         "abracadabra",
 				bodyFilePath: "testbody.txt",
-				format:       knownFormat("plain-text"),
+				format:       KnownFormat("plain-text"),
 			},
 			errBodyProvidedTwice,
 		},
 	}
 	for _, e := range expectations {
-		if r := e.in.checkArgs(); r != e.out {
-			t.Logf("Expected (%v).checkArgs to return %v, but got %v", e.in, e.out, r)
+		if r := e.in.CheckArgs(); r != e.out {
+			t.Logf("Expected (%v).CheckArgs to return %v, but got %v", e.in, e.out, r)
 			t.Fail()
 		}
-		if _, r := newBombardier(e.in); r != e.out {
+		if _, r := NewBombardier(e.in); r != e.out {
 			t.Logf("Expected newBombardier(%v) to return %v, but got %v", e.in, e.out, r)
 			t.Fail()
 		}
@@ -246,7 +246,7 @@ func TestCheckArgs(t *testing.T) {
 }
 
 func TestCheckArgsGarbageUrl(t *testing.T) {
-	c := config{
+	c := Config{
 		numConns: defaultNumberOfConns,
 		numReqs:  &defaultNumberOfReqs,
 		duration: &defaultTestDuration,
@@ -256,13 +256,13 @@ func TestCheckArgsGarbageUrl(t *testing.T) {
 		method:   "GET",
 		body:     "",
 	}
-	if c.checkArgs() == nil {
+	if c.CheckArgs() == nil {
 		t.Fail()
 	}
 }
 
 func TestCheckArgsInvalidRequestMethod(t *testing.T) {
-	c := config{
+	c := Config{
 		numConns: defaultNumberOfConns,
 		numReqs:  &defaultNumberOfReqs,
 		duration: &defaultTestDuration,
@@ -272,17 +272,17 @@ func TestCheckArgsInvalidRequestMethod(t *testing.T) {
 		method:   "ABRACADABRA",
 		body:     "",
 	}
-	e := c.checkArgs()
+	e := c.CheckArgs()
 	if e == nil {
 		t.Fail()
 	}
-	if _, ok := e.(*invalidHTTPMethodError); !ok {
+	if _, ok := e.(*InvalidHTTPMethodError); !ok {
 		t.Fail()
 	}
 }
 
 func TestCheckArgsTestType(t *testing.T) {
-	countedConfig := config{
+	countedConfig := Config{
 		numConns: defaultNumberOfConns,
 		numReqs:  &defaultNumberOfReqs,
 		duration: nil,
@@ -292,7 +292,7 @@ func TestCheckArgsTestType(t *testing.T) {
 		method:   "GET",
 		body:     "",
 	}
-	timedConfig := config{
+	timedConfig := Config{
 		numConns: defaultNumberOfConns,
 		numReqs:  nil,
 		duration: &defaultTestDuration,
@@ -302,7 +302,7 @@ func TestCheckArgsTestType(t *testing.T) {
 		method:   "GET",
 		body:     "",
 	}
-	both := config{
+	both := Config{
 		numConns: defaultNumberOfConns,
 		numReqs:  &defaultNumberOfReqs,
 		duration: &defaultTestDuration,
@@ -312,7 +312,7 @@ func TestCheckArgsTestType(t *testing.T) {
 		method:   "GET",
 		body:     "",
 	}
-	defaultConfig := config{
+	defaultConfig := Config{
 		numConns: defaultNumberOfConns,
 		numReqs:  nil,
 		duration: nil,
@@ -322,27 +322,27 @@ func TestCheckArgsTestType(t *testing.T) {
 		method:   "GET",
 		body:     "",
 	}
-	if err := countedConfig.checkArgs(); err != nil ||
-		countedConfig.testType() != counted {
+	if err := countedConfig.CheckArgs(); err != nil ||
+		countedConfig.TestType() != counted {
 		t.Fail()
 	}
-	if err := timedConfig.checkArgs(); err != nil ||
-		timedConfig.testType() != timed {
+	if err := timedConfig.CheckArgs(); err != nil ||
+		timedConfig.TestType() != timed {
 		t.Fail()
 	}
-	if err := both.checkArgs(); err != nil ||
-		both.testType() != counted {
+	if err := both.CheckArgs(); err != nil ||
+		both.TestType() != counted {
 		t.Fail()
 	}
-	if err := defaultConfig.checkArgs(); err != nil ||
-		defaultConfig.testType() != timed ||
+	if err := defaultConfig.CheckArgs(); err != nil ||
+		defaultConfig.TestType() != timed ||
 		defaultConfig.duration != &defaultTestDuration {
 		t.Fail()
 	}
 }
 
 func TestTimeoutMillis(t *testing.T) {
-	defaultConfig := config{
+	defaultConfig := Config{
 		numConns: defaultNumberOfConns,
 		numReqs:  nil,
 		duration: nil,
@@ -352,7 +352,7 @@ func TestTimeoutMillis(t *testing.T) {
 		method:   "GET",
 		body:     "",
 	}
-	if defaultConfig.timeoutMillis() != 2000000 {
+	if defaultConfig.TimeoutMillis() != 2000000 {
 		t.Fail()
 	}
 }
@@ -360,7 +360,7 @@ func TestTimeoutMillis(t *testing.T) {
 func TestInvalidHTTPMethodError(t *testing.T) {
 	invalidMethod := "NOSUCHMETHOD"
 	want := "Unknown HTTP method: " + invalidMethod
-	err := &invalidHTTPMethodError{invalidMethod}
+	err := &InvalidHTTPMethodError{invalidMethod}
 	if got := err.Error(); got != want {
 		t.Error(got, want)
 	}
@@ -368,13 +368,13 @@ func TestInvalidHTTPMethodError(t *testing.T) {
 
 func TestClientTypToStringConversion(t *testing.T) {
 	expectations := []struct {
-		in  clientTyp
+		in  ClientTyp
 		out string
 	}{
 		{fhttp, "FastHTTP"},
 		{nhttp1, "net/http v1.x"},
 		{nhttp2, "net/http v2.0"},
-		{42, "unknown client"},
+		{42, "unknown Client"},
 	}
 	for _, exp := range expectations {
 		act := exp.in.String()
@@ -384,7 +384,7 @@ func TestClientTypToStringConversion(t *testing.T) {
 	}
 }
 
-func clientTypeFromString(s string) clientTyp {
+func clientTypeFromString(s string) ClientTyp {
 	switch s {
 	case "fasthttp":
 		return fhttp

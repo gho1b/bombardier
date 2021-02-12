@@ -27,8 +27,8 @@ func TestInvalidArgsParsing(t *testing.T) {
 		},
 	}
 	for _, e := range expectations {
-		p := newKingpinParser()
-		if _, err := p.parse(e.in); err == nil ||
+		p := NewKingpinParser()
+		if _, err := p.Parse(e.in); err == nil ||
 			err.Error() != e.out {
 			t.Error(err, e.out)
 		}
@@ -36,9 +36,9 @@ func TestInvalidArgsParsing(t *testing.T) {
 }
 
 func TestUnspecifiedArgParsing(t *testing.T) {
-	p := newKingpinParser()
+	p := NewKingpinParser()
 	args := []string{programName, "--someunspecifiedflag"}
-	_, err := p.parse(args)
+	_, err := p.Parse(args)
 	if err == nil {
 		t.Fail()
 	}
@@ -48,23 +48,23 @@ func TestArgsParsing(t *testing.T) {
 	ten := uint64(10)
 	expectations := []struct {
 		in  [][]string
-		out config
+		out Config
 	}{
 		{
 			[][]string{
 				{programName, ":8080"},
 				{programName, "localhost:8080"},
 			},
-			config{
+			Config{
 				numConns:      defaultNumberOfConns,
 				timeout:       defaultTimeout,
-				headers:       new(headersList),
+				headers:       new(HeadersList),
 				method:        "GET",
 				url:           "http://localhost:8080",
 				printIntro:    true,
 				printProgress: true,
 				printResult:   true,
-				format:        knownFormat("plain-text"),
+				format:        KnownFormat("plain-text"),
 			},
 		},
 		{
@@ -73,30 +73,30 @@ func TestArgsParsing(t *testing.T) {
 				{programName, "https://:443"},
 				{programName, "https://localhost"},
 			},
-			config{
+			Config{
 				numConns:      defaultNumberOfConns,
 				timeout:       defaultTimeout,
-				headers:       new(headersList),
+				headers:       new(HeadersList),
 				method:        "GET",
 				url:           "https://localhost:443",
 				printIntro:    true,
 				printProgress: true,
 				printResult:   true,
-				format:        knownFormat("plain-text"),
+				format:        KnownFormat("plain-text"),
 			},
 		},
 		{
 			[][]string{{programName, "https://somehost.somedomain"}},
-			config{
+			Config{
 				numConns:      defaultNumberOfConns,
 				timeout:       defaultTimeout,
-				headers:       new(headersList),
+				headers:       new(HeadersList),
 				method:        "GET",
 				url:           "https://somehost.somedomain:443",
 				printIntro:    true,
 				printProgress: true,
 				printResult:   true,
-				format:        knownFormat("plain-text"),
+				format:        KnownFormat("plain-text"),
 			},
 		},
 		{
@@ -130,17 +130,17 @@ func TestArgsParsing(t *testing.T) {
 					"https://somehost.somedomain",
 				},
 			},
-			config{
+			Config{
 				numConns:      10,
 				timeout:       10 * time.Second,
-				headers:       new(headersList),
+				headers:       new(HeadersList),
 				method:        "GET",
 				numReqs:       &defaultNumberOfReqs,
 				url:           "https://somehost.somedomain:443",
 				printIntro:    true,
 				printProgress: true,
 				printResult:   true,
-				format:        knownFormat("plain-text"),
+				format:        KnownFormat("plain-text"),
 			},
 		},
 		{
@@ -156,17 +156,17 @@ func TestArgsParsing(t *testing.T) {
 					"https://somehost.somedomain",
 				},
 			},
-			config{
+			Config{
 				numConns:       defaultNumberOfConns,
 				timeout:        defaultTimeout,
-				headers:        new(headersList),
+				headers:        new(HeadersList),
 				printLatencies: true,
 				method:         "GET",
 				url:            "https://somehost.somedomain:443",
 				printIntro:     true,
 				printProgress:  true,
 				printResult:    true,
-				format:         knownFormat("plain-text"),
+				format:         KnownFormat("plain-text"),
 			},
 		},
 		{
@@ -182,17 +182,17 @@ func TestArgsParsing(t *testing.T) {
 					"https://somehost.somedomain",
 				},
 			},
-			config{
+			Config{
 				numConns:      defaultNumberOfConns,
 				timeout:       defaultTimeout,
-				headers:       new(headersList),
+				headers:       new(HeadersList),
 				insecure:      true,
 				method:        "GET",
 				url:           "https://somehost.somedomain:443",
 				printIntro:    true,
 				printProgress: true,
 				printResult:   true,
-				format:        knownFormat("plain-text"),
+				format:        KnownFormat("plain-text"),
 			},
 		},
 		{
@@ -210,10 +210,10 @@ func TestArgsParsing(t *testing.T) {
 					"https://somehost.somedomain",
 				},
 			},
-			config{
+			Config{
 				numConns:      defaultNumberOfConns,
 				timeout:       defaultTimeout,
-				headers:       new(headersList),
+				headers:       new(HeadersList),
 				method:        "GET",
 				keyPath:       "testclient.key",
 				certPath:      "testclient.cert",
@@ -221,7 +221,7 @@ func TestArgsParsing(t *testing.T) {
 				printIntro:    true,
 				printProgress: true,
 				printResult:   true,
-				format:        knownFormat("plain-text"),
+				format:        KnownFormat("plain-text"),
 			},
 		},
 		{
@@ -251,25 +251,25 @@ func TestArgsParsing(t *testing.T) {
 					"https://somehost.somedomain",
 				},
 			},
-			config{
+			Config{
 				numConns:      defaultNumberOfConns,
 				timeout:       defaultTimeout,
-				headers:       new(headersList),
+				headers:       new(HeadersList),
 				method:        "POST",
 				body:          "reqbody",
 				url:           "https://somehost.somedomain:443",
 				printIntro:    true,
 				printProgress: true,
 				printResult:   true,
-				format:        knownFormat("plain-text"),
+				format:        KnownFormat("plain-text"),
 			},
 		},
 		{
 			[][]string{
 				{
 					programName,
-					"--header", "One: Value one",
-					"--header", "Two: Value two",
+					"--Header", "One: Value one",
+					"--Header", "Two: Value two",
 					"https://somehost.somedomain",
 				},
 				{
@@ -280,15 +280,15 @@ func TestArgsParsing(t *testing.T) {
 				},
 				{
 					programName,
-					"--header=One: Value one",
-					"--header=Two: Value two",
+					"--Header=One: Value one",
+					"--Header=Two: Value two",
 					"https://somehost.somedomain",
 				},
 			},
-			config{
+			Config{
 				numConns: defaultNumberOfConns,
 				timeout:  defaultTimeout,
-				headers: &headersList{
+				headers: &HeadersList{
 					{"One", "Value one"},
 					{"Two", "Value two"},
 				},
@@ -297,7 +297,7 @@ func TestArgsParsing(t *testing.T) {
 				printIntro:    true,
 				printProgress: true,
 				printResult:   true,
-				format:        knownFormat("plain-text"),
+				format:        KnownFormat("plain-text"),
 			},
 		},
 		{
@@ -323,17 +323,17 @@ func TestArgsParsing(t *testing.T) {
 					"https://somehost.somedomain",
 				},
 			},
-			config{
+			Config{
 				numConns:      defaultNumberOfConns,
 				timeout:       defaultTimeout,
-				headers:       new(headersList),
+				headers:       new(HeadersList),
 				method:        "GET",
 				url:           "https://somehost.somedomain:443",
 				rate:          &ten,
 				printIntro:    true,
 				printProgress: true,
 				printResult:   true,
-				format:        knownFormat("plain-text"),
+				format:        KnownFormat("plain-text"),
 			},
 		},
 		{
@@ -348,17 +348,17 @@ func TestArgsParsing(t *testing.T) {
 					"https://somehost.somedomain",
 				},
 			},
-			config{
+			Config{
 				numConns:      defaultNumberOfConns,
 				timeout:       defaultTimeout,
-				headers:       new(headersList),
+				headers:       new(HeadersList),
 				method:        "GET",
 				url:           "https://somehost.somedomain:443",
 				clientType:    fhttp,
 				printIntro:    true,
 				printProgress: true,
 				printResult:   true,
-				format:        knownFormat("plain-text"),
+				format:        KnownFormat("plain-text"),
 			},
 		},
 		{
@@ -369,17 +369,17 @@ func TestArgsParsing(t *testing.T) {
 					"https://somehost.somedomain",
 				},
 			},
-			config{
+			Config{
 				numConns:      defaultNumberOfConns,
 				timeout:       defaultTimeout,
-				headers:       new(headersList),
+				headers:       new(HeadersList),
 				method:        "GET",
 				url:           "https://somehost.somedomain:443",
 				clientType:    nhttp1,
 				printIntro:    true,
 				printProgress: true,
 				printResult:   true,
-				format:        knownFormat("plain-text"),
+				format:        KnownFormat("plain-text"),
 			},
 		},
 		{
@@ -390,17 +390,17 @@ func TestArgsParsing(t *testing.T) {
 					"https://somehost.somedomain",
 				},
 			},
-			config{
+			Config{
 				numConns:      defaultNumberOfConns,
 				timeout:       defaultTimeout,
-				headers:       new(headersList),
+				headers:       new(HeadersList),
 				method:        "GET",
 				url:           "https://somehost.somedomain:443",
 				clientType:    nhttp2,
 				printIntro:    true,
 				printProgress: true,
 				printResult:   true,
-				format:        knownFormat("plain-text"),
+				format:        KnownFormat("plain-text"),
 			},
 		},
 		{
@@ -421,17 +421,17 @@ func TestArgsParsing(t *testing.T) {
 					"https://somehost.somedomain",
 				},
 			},
-			config{
+			Config{
 				numConns:      defaultNumberOfConns,
 				timeout:       defaultTimeout,
-				headers:       new(headersList),
+				headers:       new(HeadersList),
 				method:        "GET",
 				bodyFilePath:  "testbody.txt",
 				url:           "https://somehost.somedomain:443",
 				printIntro:    true,
 				printProgress: true,
 				printResult:   true,
-				format:        knownFormat("plain-text"),
+				format:        KnownFormat("plain-text"),
 			},
 		},
 		{
@@ -447,17 +447,17 @@ func TestArgsParsing(t *testing.T) {
 					"https://somehost.somedomain",
 				},
 			},
-			config{
+			Config{
 				numConns:      defaultNumberOfConns,
 				timeout:       defaultTimeout,
-				headers:       new(headersList),
+				headers:       new(HeadersList),
 				method:        "GET",
 				stream:        true,
 				url:           "https://somehost.somedomain:443",
 				printIntro:    true,
 				printProgress: true,
 				printResult:   true,
-				format:        knownFormat("plain-text"),
+				format:        KnownFormat("plain-text"),
 			},
 		},
 		{
@@ -467,16 +467,16 @@ func TestArgsParsing(t *testing.T) {
 					"https://somehost.somedomain",
 				},
 			},
-			config{
+			Config{
 				numConns:      defaultNumberOfConns,
 				timeout:       defaultTimeout,
-				headers:       new(headersList),
+				headers:       new(HeadersList),
 				method:        "GET",
 				url:           "https://somehost.somedomain:443",
 				printIntro:    true,
 				printProgress: true,
 				printResult:   true,
-				format:        knownFormat("plain-text"),
+				format:        KnownFormat("plain-text"),
 			},
 		},
 		{
@@ -512,16 +512,16 @@ func TestArgsParsing(t *testing.T) {
 					"https://somehost.somedomain",
 				},
 			},
-			config{
+			Config{
 				numConns:      defaultNumberOfConns,
 				timeout:       defaultTimeout,
-				headers:       new(headersList),
+				headers:       new(HeadersList),
 				method:        "GET",
 				url:           "https://somehost.somedomain:443",
 				printIntro:    true,
 				printProgress: true,
 				printResult:   true,
-				format:        knownFormat("plain-text"),
+				format:        KnownFormat("plain-text"),
 			},
 		},
 		{
@@ -557,16 +557,16 @@ func TestArgsParsing(t *testing.T) {
 					"https://somehost.somedomain",
 				},
 			},
-			config{
+			Config{
 				numConns:      defaultNumberOfConns,
 				timeout:       defaultTimeout,
-				headers:       new(headersList),
+				headers:       new(HeadersList),
 				method:        "GET",
 				url:           "https://somehost.somedomain:443",
 				printIntro:    true,
 				printProgress: false,
 				printResult:   true,
-				format:        knownFormat("plain-text"),
+				format:        KnownFormat("plain-text"),
 			},
 		},
 		{
@@ -582,38 +582,38 @@ func TestArgsParsing(t *testing.T) {
 					"https://somehost.somedomain",
 				},
 			},
-			config{
+			Config{
 				numConns:      defaultNumberOfConns,
 				timeout:       defaultTimeout,
-				headers:       new(headersList),
+				headers:       new(HeadersList),
 				method:        "GET",
 				url:           "https://somehost.somedomain:443",
 				printIntro:    false,
 				printProgress: false,
 				printResult:   false,
-				format:        knownFormat("plain-text"),
+				format:        KnownFormat("plain-text"),
 			},
 		},
 		{
 			[][]string{
 				{
 					programName,
-					"--format", "plain-text",
+					"--Format", "plain-text",
 					"https://somehost.somedomain",
 				},
 				{
 					programName,
-					"--format", "pt",
+					"--Format", "pt",
 					"https://somehost.somedomain",
 				},
 				{
 					programName,
-					"--format=plain-text",
+					"--Format=plain-text",
 					"https://somehost.somedomain",
 				},
 				{
 					programName,
-					"--format=pt",
+					"--Format=pt",
 					"https://somehost.somedomain",
 				},
 				{
@@ -627,38 +627,38 @@ func TestArgsParsing(t *testing.T) {
 					"https://somehost.somedomain",
 				},
 			},
-			config{
+			Config{
 				numConns:      defaultNumberOfConns,
 				timeout:       defaultTimeout,
-				headers:       new(headersList),
+				headers:       new(HeadersList),
 				method:        "GET",
 				url:           "https://somehost.somedomain:443",
 				printIntro:    true,
 				printProgress: true,
 				printResult:   true,
-				format:        knownFormat("plain-text"),
+				format:        KnownFormat("plain-text"),
 			},
 		},
 		{
 			[][]string{
 				{
 					programName,
-					"--format", "json",
+					"--Format", "json",
 					"https://somehost.somedomain",
 				},
 				{
 					programName,
-					"--format", "j",
+					"--Format", "j",
 					"https://somehost.somedomain",
 				},
 				{
 					programName,
-					"--format=json",
+					"--Format=json",
 					"https://somehost.somedomain",
 				},
 				{
 					programName,
-					"--format=j",
+					"--Format=j",
 					"https://somehost.somedomain",
 				},
 				{
@@ -672,28 +672,28 @@ func TestArgsParsing(t *testing.T) {
 					"https://somehost.somedomain",
 				},
 			},
-			config{
+			Config{
 				numConns:      defaultNumberOfConns,
 				timeout:       defaultTimeout,
-				headers:       new(headersList),
+				headers:       new(HeadersList),
 				method:        "GET",
 				url:           "https://somehost.somedomain:443",
 				printIntro:    true,
 				printProgress: true,
 				printResult:   true,
-				format:        knownFormat("json"),
+				format:        KnownFormat("json"),
 			},
 		},
 		{
 			[][]string{
 				{
 					programName,
-					"--format", "path:/path/to/tmpl.txt",
+					"--Format", "path:/path/to/tmpl.txt",
 					"https://somehost.somedomain",
 				},
 				{
 					programName,
-					"--format=path:/path/to/tmpl.txt",
+					"--Format=path:/path/to/tmpl.txt",
 					"https://somehost.somedomain",
 				},
 				{
@@ -702,23 +702,23 @@ func TestArgsParsing(t *testing.T) {
 					"https://somehost.somedomain",
 				},
 			},
-			config{
+			Config{
 				numConns:      defaultNumberOfConns,
 				timeout:       defaultTimeout,
-				headers:       new(headersList),
+				headers:       new(HeadersList),
 				method:        "GET",
 				url:           "https://somehost.somedomain:443",
 				printIntro:    true,
 				printProgress: true,
 				printResult:   true,
-				format:        userDefinedTemplate("/path/to/tmpl.txt"),
+				format:        UserDefinedTemplate("/path/to/tmpl.txt"),
 			},
 		},
 	}
 	for _, e := range expectations {
 		for _, args := range e.in {
-			p := newKingpinParser()
-			cfg, err := p.parse(args)
+			p := NewKingpinParser()
+			cfg, err := p.Parse(args)
 			if err != nil {
 				t.Error(err)
 				continue
@@ -781,7 +781,7 @@ func TestParsePrintSpec(t *testing.T) {
 			act = [3]bool{}
 			err error
 		)
-		act[0], act[1], act[2], err = parsePrintSpec(e.spec)
+		act[0], act[1], act[2], err = ParsePrintSpec(e.spec)
 		if !reflect.DeepEqual(err, e.err) {
 			t.Errorf("For %q, expected err = %q, but got %q",
 				e.spec, e.err, err,
@@ -797,8 +797,8 @@ func TestParsePrintSpec(t *testing.T) {
 }
 
 func TestArgsParsingWithEmptyPrintSpec(t *testing.T) {
-	p := newKingpinParser()
-	c, err := p.parse(
+	p := NewKingpinParser()
+	c, err := p.Parse(
 		[]string{programName, "--print=", "somehost.somedomain"})
 	if err == nil {
 		t.Fail()
@@ -810,16 +810,16 @@ func TestArgsParsingWithEmptyPrintSpec(t *testing.T) {
 
 func TestArgsParsingWithInvalidPrintSpec(t *testing.T) {
 	invalidSpecs := [][]string{
-		{programName, "--format", "noprefix.txt", "somehost.somedomain"},
-		{programName, "--format=noprefix.txt", "somehost.somedomain"},
+		{programName, "--Format", "noprefix.txt", "somehost.somedomain"},
+		{programName, "--Format=noprefix.txt", "somehost.somedomain"},
 		{programName, "-o", "noprefix.txt", "somehost.somedomain"},
-		{programName, "--format", "unknown-format", "somehost.somedomain"},
-		{programName, "--format=unknown-format", "somehost.somedomain"},
-		{programName, "-o", "unknown-format", "somehost.somedomain"},
+		{programName, "--Format", "unknown-Format", "somehost.somedomain"},
+		{programName, "--Format=unknown-Format", "somehost.somedomain"},
+		{programName, "-o", "unknown-Format", "somehost.somedomain"},
 	}
-	p := newKingpinParser()
+	p := NewKingpinParser()
 	for _, is := range invalidSpecs {
-		c, err := p.parse(is)
+		c, err := p.Parse(is)
 		if err == nil || c != emptyConf {
 			t.Errorf("invalid print spec %q parsed correctly", is)
 		}
@@ -834,7 +834,7 @@ func TestTryParseUrl(t *testing.T) {
 	}
 
 	for _, url := range invalid {
-		_, err := tryParseURL(url)
+		_, err := TryParseURL(url)
 		if err == nil {
 			t.Errorf("%q is not a valid URL", url)
 		}
@@ -842,9 +842,9 @@ func TestTryParseUrl(t *testing.T) {
 }
 
 func TestEmbeddedURLParsing(t *testing.T) {
-	p := newKingpinParser()
+	p := NewKingpinParser()
 	url := "http://127.0.0.1:8080/to?url=http://10.100.99.41:38667"
-	c, err := p.parse([]string{programName, url})
+	c, err := p.Parse([]string{programName, url})
 	if err != nil {
 		t.Error(err)
 	}

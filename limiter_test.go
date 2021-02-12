@@ -11,7 +11,7 @@ import (
 const maxRps = 10000000
 
 func TestNoopLimiter(t *testing.T) {
-	var lim limiter = &nooplimiter{}
+	var lim Limiter = &Nooplimiter{}
 	done := make(chan struct{})
 	counter := uint64(0)
 	var wg sync.WaitGroup
@@ -20,9 +20,9 @@ func TestNoopLimiter(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			for {
-				res := lim.pace(done)
+				res := lim.Pace(done)
 				if res != cont {
-					t.Error("nooplimiter should always return cont")
+					t.Error("Nooplimiter should always return cont")
 				}
 				atomic.AddUint64(&counter, 1)
 				select {
@@ -42,13 +42,13 @@ func TestNoopLimiter(t *testing.T) {
 }
 
 func BenchmarkNoopLimiter(bm *testing.B) {
-	var lim limiter = &nooplimiter{}
+	var lim Limiter = &Nooplimiter{}
 	done := make(chan struct{})
 	bm.SetParallelism(int(defaultNumberOfConns) / runtime.NumCPU())
 	bm.ResetTimer()
 	bm.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			lim.pace(done)
+			lim.Pace(done)
 		}
 	})
 }
@@ -75,7 +75,7 @@ func TestBucketLimiterLowRates(t *testing.T) {
 		exp := expectations[i]
 		go func() {
 			defer lwg.Done()
-			lim := newBucketLimiter(exp.rate)
+			lim := NewBucketLimiter(exp.rate)
 			done := make(chan struct{})
 			counter := uint64(0)
 			waitChan := make(chan struct{})
@@ -83,7 +83,7 @@ func TestBucketLimiterLowRates(t *testing.T) {
 				defer func() {
 					waitChan <- struct{}{}
 				}()
-				for lim.pace(done) == cont {
+				for lim.Pace(done) == cont {
 					counter++
 				}
 			}()
@@ -119,7 +119,7 @@ func TestBucketLimiterHighRates(t *testing.T) {
 	}
 	for i := range expectations {
 		exp := expectations[i]
-		lim := newBucketLimiter(exp.rate)
+		lim := NewBucketLimiter(exp.rate)
 		counter := uint64(0)
 		done := make(chan struct{})
 		waitChan := make(chan struct{})
@@ -127,7 +127,7 @@ func TestBucketLimiterHighRates(t *testing.T) {
 			defer func() {
 				waitChan <- struct{}{}
 			}()
-			for lim.pace(done) == cont {
+			for lim.Pace(done) == cont {
 				counter++
 			}
 		}()
@@ -148,13 +148,13 @@ func TestBucketLimiterHighRates(t *testing.T) {
 }
 
 func BenchmarkBucketLimiter(bm *testing.B) {
-	lim := newBucketLimiter(maxRps)
+	lim := NewBucketLimiter(maxRps)
 	done := make(chan struct{})
 	bm.SetParallelism(int(defaultNumberOfConns) / runtime.NumCPU())
 	bm.ResetTimer()
 	bm.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			lim.pace(done)
+			lim.Pace(done)
 		}
 	})
 }

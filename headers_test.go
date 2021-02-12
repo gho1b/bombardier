@@ -6,15 +6,15 @@ import (
 
 func TestHeadersToStringConversion(t *testing.T) {
 	expectations := []struct {
-		in  headersList
+		in  HeadersList
 		out string
 	}{
 		{
-			[]header{},
+			[]Header{},
 			"[]",
 		},
 		{
-			[]header{
+			[]Header{
 				{"Key1", "Value1"},
 				{"Key2", "Value2"}},
 			"[{Key1 Value1} {Key2 Value2}]",
@@ -30,20 +30,20 @@ func TestHeadersToStringConversion(t *testing.T) {
 }
 
 func TestShouldErrorOnInvalidFormat(t *testing.T) {
-	h := new(headersList)
-	if err := h.Set("Yaba daba do"); err == nil {
+	h := new(HeadersList)
+	if err := h.Set("Yaba daba Do"); err == nil {
 		t.Error("Should fail on strings without colon")
 	}
 }
 
 func TestShouldProperlyAddValidHeaders(t *testing.T) {
-	h := new(headersList)
+	h := new(HeadersList)
 	for _, hs := range []string{"Key1: Value1", "Key2: Value2"} {
 		if err := h.Set(hs); err != nil {
 			t.Error(err)
 		}
 	}
-	e := []header{{"Key1", "Value1"}, {"Key2", "Value2"}}
+	e := []Header{{"Key1", "Value1"}, {"Key2", "Value2"}}
 	for i, v := range *h {
 		if e[i] != v {
 			t.Fail()
@@ -52,7 +52,7 @@ func TestShouldProperlyAddValidHeaders(t *testing.T) {
 }
 
 func TestShouldTrimHeaderValues(t *testing.T) {
-	h := new(headersList)
+	h := new(HeadersList)
 	if err := h.Set("Key:   Value   "); err != nil {
 		t.Error(err)
 	}

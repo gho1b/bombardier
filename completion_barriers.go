@@ -6,28 +6,28 @@ import (
 	"time"
 )
 
-type completionBarrier interface {
-	completed() float64
-	tryGrabWork() bool
-	jobDone()
-	done() <-chan struct{}
-	cancel()
+type CompletionBarrier interface {
+	Completed() float64
+	TryGrabWork() bool
+	JobDone()
+	Done() <-chan struct{}
+	Cancel()
 }
 
-type countingCompletionBarrier struct {
+type CountingCompletionBarrier struct {
 	numReqs, reqsGrabbed, reqsDone uint64
 	doneChan                       chan struct{}
 	closeOnce                      sync.Once
 }
 
-func newCountingCompletionBarrier(numReqs uint64) completionBarrier {
-	c := new(countingCompletionBarrier)
+func NewCountingCompletionBarrier(numReqs uint64) CompletionBarrier {
+	c := new(CountingCompletionBarrier)
 	c.reqsDone, c.reqsGrabbed, c.numReqs = 0, 0, numReqs
 	c.doneChan = make(chan struct{})
-	return completionBarrier(c)
+	return CompletionBarrier(c)
 }
 
-func (c *countingCompletionBarrier) tryGrabWork() bool {
+func (c *CountingCompletionBarrier) TryGrabWork() bool {
 	select {
 	case <-c.doneChan:
 		return false
@@ -37,7 +37,7 @@ func (c *countingCompletionBarrier) tryGrabWork() bool {
 	}
 }
 
-func (c *countingCompletionBarrier) jobDone() {
+func (c *CountingCompletionBarrier) JobDone() {
 	reqsDone := atomic.AddUint64(&c.reqsDone, 1)
 	if reqsDone == c.numReqs {
 		c.closeOnce.Do(func() {
@@ -46,17 +46,17 @@ func (c *countingCompletionBarrier) jobDone() {
 	}
 }
 
-func (c *countingCompletionBarrier) done() <-chan struct{} {
+func (c *CountingCompletionBarrier) Done() <-chan struct{} {
 	return c.doneChan
 }
 
-func (c *countingCompletionBarrier) cancel() {
+func (c *CountingCompletionBarrier) Cancel() {
 	c.closeOnce.Do(func() {
 		close(c.doneChan)
 	})
 }
 
-func (c *countingCompletionBarrier) completed() float64 {
+func (c *CountingCompletionBarrier) Completed() float64 {
 	select {
 	case <-c.doneChan:
 		return 1.0
@@ -66,18 +66,18 @@ func (c *countingCompletionBarrier) completed() float64 {
 	}
 }
 
-type timedCompletionBarrier struct {
+type TimedCompletionBarrier struct {
 	doneChan  chan struct{}
 	closeOnce sync.Once
 	start     time.Time
 	duration  time.Duration
 }
 
-func newTimedCompletionBarrier(duration time.Duration) completionBarrier {
+func NewTimedCompletionBarrier(duration time.Duration) CompletionBarrier {
 	if duration < 0 {
-		panic("timedCompletionBarrier: negative duration")
+		panic("TimedCompletionBarrier: negative duration")
 	}
-	c := new(timedCompletionBarrier)
+	c := new(TimedCompletionBarrier)
 	c.doneChan = make(chan struct{})
 	c.start = time.Now()
 	c.duration = duration
@@ -88,10 +88,10 @@ func newTimedCompletionBarrier(duration time.Duration) completionBarrier {
 			})
 		})
 	}()
-	return completionBarrier(c)
+	return CompletionBarrier(c)
 }
 
-func (c *timedCompletionBarrier) tryGrabWork() bool {
+func (c *TimedCompletionBarrier) TryGrabWork() bool {
 	select {
 	case <-c.doneChan:
 		return false
@@ -100,20 +100,20 @@ func (c *timedCompletionBarrier) tryGrabWork() bool {
 	}
 }
 
-func (c *timedCompletionBarrier) jobDone() {
+func (c *TimedCompletionBarrier) JobDone() {
 }
 
-func (c *timedCompletionBarrier) done() <-chan struct{} {
+func (c *TimedCompletionBarrier) Done() <-chan struct{} {
 	return c.doneChan
 }
 
-func (c *timedCompletionBarrier) cancel() {
+func (c *TimedCompletionBarrier) Cancel() {
 	c.closeOnce.Do(func() {
 		close(c.doneChan)
 	})
 }
 
-func (c *timedCompletionBarrier) completed() float64 {
+func (c *TimedCompletionBarrier) Completed() float64 {
 	select {
 	case <-c.doneChan:
 		return 1.0

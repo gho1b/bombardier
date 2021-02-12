@@ -13,18 +13,18 @@ import (
 	"github.com/alecthomas/kingpin"
 )
 
-type argsParser interface {
-	parse([]string) (config, error)
+type ArgsParser interface {
+	Parse([]string) (Config, error)
 }
 
-type kingpinParser struct {
+type KingpinParser struct {
 	app *kingpin.Application
 
 	url string
 
-	numReqs           *nullableUint64
-	duration          *nullableDuration
-	headers           *headersList
+	numReqs           *NullableUint64
+	duration          *NullableDuration
+	headers           *HeadersList
 	numConns          uint64
 	timeout           time.Duration
 	latencies         bool
@@ -36,20 +36,20 @@ type kingpinParser struct {
 	stream            bool
 	certPath          string
 	keyPath           string
-	rate              *nullableUint64
-	clientType        clientTyp
+	rate              *NullableUint64
+	clientType        ClientTyp
 
-	printSpec *nullableString
+	printSpec *NullableString
 	noPrint   bool
 
 	formatSpec string
 }
 
-func newKingpinParser() argsParser {
-	kparser := &kingpinParser{
-		numReqs:      new(nullableUint64),
-		duration:     new(nullableDuration),
-		headers:      new(headersList),
+func NewKingpinParser() ArgsParser {
+	kparser := &KingpinParser{
+		numReqs:      new(NullableUint64),
+		duration:     new(NullableDuration),
+		headers:      new(HeadersList),
 		numConns:     defaultNumberOfConns,
 		timeout:      defaultTimeout,
 		latencies:    false,
@@ -61,9 +61,9 @@ func newKingpinParser() argsParser {
 		keyPath:      "",
 		insecure:     false,
 		url:          "",
-		rate:         new(nullableUint64),
+		rate:         new(NullableUint64),
 		clientType:   fhttp,
-		printSpec:    new(nullableString),
+		printSpec:    new(NullableString),
 		noPrint:      false,
 		formatSpec:   "plain-text",
 	}
@@ -98,14 +98,14 @@ func newKingpinParser() argsParser {
 		"chunked transfer encoding or to serve it from memory").
 		Short('s').
 		BoolVar(&kparser.stream)
-	app.Flag("cert", "Path to the client's TLS Certificate").
+	app.Flag("cert", "Path to the Client's TLS Certificate").
 		Default("").
 		StringVar(&kparser.certPath)
-	app.Flag("key", "Path to the client's TLS Certificate Private Key").
+	app.Flag("key", "Path to the Client's TLS Certificate Private Key").
 		Default("").
 		StringVar(&kparser.keyPath)
 	app.Flag("insecure",
-		"Controls whether a client verifies the server's certificate"+
+		"Controls whether a Client verifies the server's certificate"+
 			" chain and host name").
 		Short('k').
 		BoolVar(&kparser.insecure)
@@ -114,7 +114,7 @@ func newKingpinParser() argsParser {
 		Short('a').
 		BoolVar(&kparser.disableKeepAlives)
 
-	app.Flag("header", "HTTP headers to use(can be repeated)").
+	app.Flag("Header", "HTTP headers to use(can be repeated)").
 		PlaceHolder("\"K: V\"").
 		Short('H').
 		SetValue(kparser.headers)
@@ -132,19 +132,19 @@ func newKingpinParser() argsParser {
 		Short('r').
 		SetValue(kparser.rate)
 
-	app.Flag("fasthttp", "Use fasthttp client").
+	app.Flag("fasthttp", "Use fasthttp Client").
 		Action(func(*kingpin.ParseContext) error {
 			kparser.clientType = fhttp
 			return nil
 		}).
 		Bool()
-	app.Flag("http1", "Use net/http client with forced HTTP/1.x").
+	app.Flag("http1", "Use net/http Client with forced HTTP/1.x").
 		Action(func(*kingpin.ParseContext) error {
 			kparser.clientType = nhttp1
 			return nil
 		}).
 		Bool()
-	app.Flag("http2", "Use net/http client with enabled HTTP/2.0").
+	app.Flag("http2", "Use net/http Client with enabled HTTP/2.0").
 		Action(func(*kingpin.ParseContext) error {
 			kparser.clientType = nhttp2
 			return nil
@@ -166,12 +166,12 @@ func newKingpinParser() argsParser {
 		Short('q').
 		BoolVar(&kparser.noPrint)
 
-	app.Flag("format", "Which format to use to output the result. "+
-		"<spec> is either a name (or its shorthand) of some format "+
-		"understood by bombardier or a path to the user-defined template, "+
-		"which uses Go's text/template syntax, prefixed with 'path:' string "+
-		"(without single quotes), i.e. \"path:/some/path/to/your.template\" "+
-		" or \"path:C:\\some\\path\\to\\your.template\" in case of Windows. "+
+	app.Flag("Format", "Which Format to use to output the result. "+
+		"<spec> is either a name (or its shorthand) of some Format "+
+		"understood by bombardier or a path to the user-defined Template, "+
+		"which uses Go's text/Template syntax, prefixed with 'path:' string "+
+		"(without single quotes), i.e. \"path:/some/path/to/your.Template\" "+
+		" or \"path:C:\\some\\path\\to\\your.Template\" in case of Windows. "+
 		"Formats understood by bombardier are:"+
 		"\n\t* plain-text (short: pt)"+
 		"\n\t* json (short: j)").
@@ -183,10 +183,10 @@ func newKingpinParser() argsParser {
 		StringVar(&kparser.url)
 
 	kparser.app = app
-	return argsParser(kparser)
+	return ArgsParser(kparser)
 }
 
-func (k *kingpinParser) parse(args []string) (config, error) {
+func (k *KingpinParser) Parse(args []string) (Config, error) {
 	k.app.Name = args[0]
 	_, err := k.app.Parse(args[1:])
 	if err != nil {
@@ -194,7 +194,7 @@ func (k *kingpinParser) parse(args []string) (config, error) {
 	}
 	pi, pp, pr := true, true, true
 	if k.printSpec.val != nil {
-		pi, pp, pr, err = parsePrintSpec(*k.printSpec.val)
+		pi, pp, pr, err = ParsePrintSpec(*k.printSpec.val)
 		if err != nil {
 			return emptyConf, err
 		}
@@ -202,17 +202,17 @@ func (k *kingpinParser) parse(args []string) (config, error) {
 	if k.noPrint {
 		pi, pp, pr = false, false, false
 	}
-	format := formatFromString(k.formatSpec)
+	format := FormatFromString(k.formatSpec)
 	if format == nil {
 		return emptyConf, fmt.Errorf(
-			"unknown format or invalid format spec %q", k.formatSpec,
+			"unknown Format or invalid Format spec %q", k.formatSpec,
 		)
 	}
-	url, err := tryParseURL(k.url)
+	url, err := TryParseURL(k.url)
 	if err != nil {
 		return emptyConf, err
 	}
-	return config{
+	return Config{
 		numConns:          k.numConns,
 		numReqs:           k.numReqs.val,
 		duration:          k.duration.val,
@@ -237,7 +237,7 @@ func (k *kingpinParser) parse(args []string) (config, error) {
 	}, nil
 }
 
-func parsePrintSpec(spec string) (bool, bool, bool, error) {
+func ParsePrintSpec(spec string) (bool, bool, bool, error) {
 	pi, pp, pr := false, false, false
 	if spec == "" {
 		return false, false, false, errEmptyPrintSpec
@@ -269,10 +269,10 @@ func parsePrintSpec(spec string) (bool, bool, bool, error) {
 
 var re = regexp.MustCompile(`^(?P<proto>.+?:\/\/)?.*$`)
 
-func tryParseURL(raw string) (string, error) {
+func TryParseURL(raw string) (string, error) {
 	rs := raw
 
-	// Try the parse.
+	// Try the Parse.
 	m := re.FindStringSubmatch(rs)
 	if m == nil {
 		// Just in case.

@@ -34,7 +34,7 @@ func TestShouldFormatBinary(t *testing.T) {
 		{7 * GB, "7.00GB"},
 	}
 	for _, e := range expectations {
-		actual := formatBinary(e.in)
+		actual := FormatBinary(e.in)
 		expected := e.out
 		if expected != actual {
 			t.Errorf("Expected \"%v\", but got \"%v\"", expected, actual)
@@ -56,7 +56,7 @@ func TestShouldFormatUs(t *testing.T) {
 		{90 * 60 * M, "1.50h"},
 	}
 	for _, e := range expectations {
-		actual := formatTimeUs(e.in)
+		actual := FormatTimeUs(e.in)
 		expected := e.out
 		if expected != actual {
 			t.Errorf("Expected \"%v\", but got \"%v\"", expected, actual)

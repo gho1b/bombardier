@@ -12,7 +12,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/codesenberg/bombardier/internal"
+	"github.com/gho1b/bombardier/internal"
 
 	"github.com/cheggaaa/pb"
 	fhist "github.com/codesenberg/concurrent/float64/histogram"
@@ -20,7 +20,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-type bombardier struct {
+type Bombardier struct {
 	bytesRead, bytesWritten int64
 
 	// HTTP codes
@@ -31,16 +31,16 @@ type bombardier struct {
 	req5xx uint64
 	others uint64
 
-	conf        config
-	barrier     completionBarrier
-	ratelimiter limiter
+	conf        Config
+	barrier     CompletionBarrier
+	ratelimiter Limiter
 	wg          sync.WaitGroup
 
 	timeTaken time.Duration
 	latencies *uhist.Histogram
 	requests  *fhist.Histogram
 
-	client   client
+	client   Client
 	doneChan chan struct{}
 
 	// RPS metrics
@@ -49,7 +49,7 @@ type bombardier struct {
 	start time.Time
 
 	// Errors
-	errors *errorMap
+	errors *ErrorMap
 
 	// Progress bar
 	bar *pb.ProgressBar
@@ -59,47 +59,47 @@ type bombardier struct {
 	template *template.Template
 }
 
-func newBombardier(c config) (*bombardier, error) {
-	if err := c.checkArgs(); err != nil {
+func NewBombardier(c Config) (*Bombardier, error) {
+	if err := c.CheckArgs(); err != nil {
 		return nil, err
 	}
-	b := new(bombardier)
+	b := new(Bombardier)
 	b.conf = c
 	b.latencies = uhist.Default()
 	b.requests = fhist.Default()
 
-	if b.conf.testType() == counted {
+	if b.conf.TestType() == counted {
 		b.bar = pb.New64(int64(*b.conf.numReqs))
 		b.bar.ShowSpeed = true
-	} else if b.conf.testType() == timed {
+	} else if b.conf.TestType() == timed {
 		b.bar = pb.New64(b.conf.duration.Nanoseconds() / 1e9)
 		b.bar.ShowCounters = false
 		b.bar.ShowPercent = false
 	}
 	b.bar.ManualUpdate = true
 
-	if b.conf.testType() == counted {
-		b.barrier = newCountingCompletionBarrier(*b.conf.numReqs)
+	if b.conf.TestType() == counted {
+		b.barrier = NewCountingCompletionBarrier(*b.conf.numReqs)
 	} else {
-		b.barrier = newTimedCompletionBarrier(*b.conf.duration)
+		b.barrier = NewTimedCompletionBarrier(*b.conf.duration)
 	}
 
 	if b.conf.rate != nil {
-		b.ratelimiter = newBucketLimiter(*b.conf.rate)
+		b.ratelimiter = NewBucketLimiter(*b.conf.rate)
 	} else {
-		b.ratelimiter = &nooplimiter{}
+		b.ratelimiter = &Nooplimiter{}
 	}
 
 	b.out = os.Stdout
 
-	tlsConfig, err := generateTLSConfig(c)
+	tlsConfig, err := GenerateTLSConfig(c)
 	if err != nil {
 		return nil, err
 	}
 
 	var (
 		pbody *string
-		bsp   bodyStreamProducer
+		bsp   BodyStreamProducer
 	)
 	if c.stream {
 		if c.bodyFilePath != "" {
@@ -109,7 +109,7 @@ func newBombardier(c config) (*bombardier, error) {
 		} else {
 			bsp = func() (io.ReadCloser, error) {
 				return ioutil.NopCloser(
-					proxyReader{strings.NewReader(c.body)},
+					ProxyReader{strings.NewReader(c.body)},
 				), nil
 			}
 		}
@@ -126,7 +126,7 @@ func newBombardier(c config) (*bombardier, error) {
 		}
 	}
 
-	cc := &clientOpts{
+	cc := &ClientOpts{
 		HTTP2:             false,
 		maxConns:          c.numConns,
 		timeout:           c.timeout,
@@ -141,65 +141,65 @@ func newBombardier(c config) (*bombardier, error) {
 		bytesRead:    &b.bytesRead,
 		bytesWritten: &b.bytesWritten,
 	}
-	b.client = makeHTTPClient(c.clientType, cc)
+	b.client = MakeHTTPClient(c.clientType, cc)
 
 	if !b.conf.printProgress {
 		b.bar.Output = ioutil.Discard
 		b.bar.NotPrint = true
 	}
 
-	b.template, err = b.prepareTemplate()
+	b.template, err = b.PrepareTemplate()
 	if err != nil {
 		return nil, err
 	}
 
 	b.wg.Add(int(c.numConns))
-	b.errors = newErrorMap()
+	b.errors = NewErrorMap()
 	b.doneChan = make(chan struct{}, 2)
 	return b, nil
 }
 
-func makeHTTPClient(clientType clientTyp, cc *clientOpts) client {
-	var cl client
+func MakeHTTPClient(clientType ClientTyp, cc *ClientOpts) Client {
+	var cl Client
 	switch clientType {
 	case nhttp1:
-		cl = newHTTPClient(cc)
+		cl = NewHTTPClient(cc)
 	case nhttp2:
 		cc.HTTP2 = true
-		cl = newHTTPClient(cc)
+		cl = NewHTTPClient(cc)
 	case fhttp:
 		fallthrough
 	default:
-		cl = newFastHTTPClient(cc)
+		cl = NewFastHTTPClient(cc)
 	}
 	return cl
 }
 
-func (b *bombardier) prepareTemplate() (*template.Template, error) {
+func (b *Bombardier) PrepareTemplate() (*template.Template, error) {
 	var (
 		templateBytes []byte
 		err           error
 	)
 	switch f := b.conf.format.(type) {
-	case knownFormat:
-		templateBytes = f.template()
-	case userDefinedTemplate:
+	case KnownFormat:
+		templateBytes = f.Template()
+	case UserDefinedTemplate:
 		templateBytes, err = ioutil.ReadFile(string(f))
 		if err != nil {
 			return nil, err
 		}
 	default:
-		panic("format can't be nil at this point, this is a bug")
+		panic("Format can't be nil at this point, this is a bug")
 	}
-	outputTemplate, err := template.New("output-template").
+	outputTemplate, err := template.New("output-Template").
 		Funcs(template.FuncMap{
 			"WithLatencies": func() bool {
 				return b.conf.printLatencies
 			},
-			"FormatBinary": formatBinary,
-			"FormatTimeUs": formatTimeUs,
+			"FormatBinary": FormatBinary,
+			"FormatTimeUs": FormatTimeUs,
 			"FormatTimeUsUint64": func(us uint64) string {
-				return formatTimeUs(float64(us))
+				return FormatTimeUs(float64(us))
 			},
 			"FloatsToArray": func(ps ...float64) []float64 {
 				return ps
@@ -223,7 +223,7 @@ func (b *bombardier) prepareTemplate() (*template.Template, error) {
 	return outputTemplate, nil
 }
 
-func (b *bombardier) writeStatistics(
+func (b *Bombardier) WriteStatistics(
 	code int, usTaken uint64,
 ) {
 	b.latencies.Increment(usTaken)
@@ -248,27 +248,27 @@ func (b *bombardier) writeStatistics(
 	atomic.AddUint64(counter, 1)
 }
 
-func (b *bombardier) performSingleRequest() {
-	code, usTaken, err := b.client.do()
+func (b *Bombardier) PerformSingleRequest() {
+	code, usTaken, err := b.client.Do()
 	if err != nil {
-		b.errors.add(err)
+		b.errors.Add(err)
 	}
-	b.writeStatistics(code, usTaken)
+	b.WriteStatistics(code, usTaken)
 }
 
-func (b *bombardier) worker() {
-	done := b.barrier.done()
-	for b.barrier.tryGrabWork() {
-		if b.ratelimiter.pace(done) == brk {
+func (b *Bombardier) Worker() {
+	done := b.barrier.Done()
+	for b.barrier.TryGrabWork() {
+		if b.ratelimiter.Pace(done) == brk {
 			break
 		}
-		b.performSingleRequest()
-		b.barrier.jobDone()
+		b.PerformSingleRequest()
+		b.barrier.JobDone()
 	}
 }
 
-func (b *bombardier) barUpdater() {
-	done := b.barrier.done()
+func (b *Bombardier) BarUpdater() {
+	done := b.barrier.Done()
 	for {
 		select {
 		case <-done:
@@ -281,7 +281,7 @@ func (b *bombardier) barUpdater() {
 			b.doneChan <- struct{}{}
 			return
 		default:
-			current := int64(b.barrier.completed() * float64(b.bar.Total))
+			current := int64(b.barrier.Completed() * float64(b.bar.Total))
 			b.bar.Set64(current)
 			b.bar.Update()
 			time.Sleep(b.bar.RefreshRate)
@@ -289,30 +289,30 @@ func (b *bombardier) barUpdater() {
 	}
 }
 
-func (b *bombardier) rateMeter() {
+func (b *Bombardier) RateMeter() {
 	requestsInterval := 10 * time.Millisecond
 	if b.conf.rate != nil {
-		requestsInterval, _ = estimate(*b.conf.rate, rateLimitInterval)
+		requestsInterval, _ = Estimate(*b.conf.rate, rateLimitInterval)
 	}
 	requestsInterval += 10 * time.Millisecond
 	ticker := time.NewTicker(requestsInterval)
 	defer ticker.Stop()
-	done := b.barrier.done()
+	done := b.barrier.Done()
 	for {
 		select {
 		case <-ticker.C:
-			b.recordRps()
+			b.RecordRps()
 			continue
 		case <-done:
 			b.wg.Wait()
-			b.recordRps()
+			b.RecordRps()
 			b.doneChan <- struct{}{}
 			return
 		}
 	}
 }
 
-func (b *bombardier) recordRps() {
+func (b *Bombardier) RecordRps() {
 	b.rpl.Lock()
 	duration := time.Since(b.start)
 	reqs := b.reqs
@@ -324,9 +324,9 @@ func (b *bombardier) recordRps() {
 	b.requests.Increment(reqsf)
 }
 
-func (b *bombardier) bombard() {
+func (b *Bombardier) Bombard() {
 	if b.conf.printIntro {
-		b.printIntro()
+		b.PrintIntro()
 	}
 	b.bar.Start()
 	bombardmentBegin := time.Now()
@@ -334,29 +334,29 @@ func (b *bombardier) bombard() {
 	for i := uint64(0); i < b.conf.numConns; i++ {
 		go func() {
 			defer b.wg.Done()
-			b.worker()
+			b.Worker()
 		}()
 	}
-	go b.rateMeter()
-	go b.barUpdater()
+	go b.RateMeter()
+	go b.BarUpdater()
 	b.wg.Wait()
 	b.timeTaken = time.Since(bombardmentBegin)
 	<-b.doneChan
 	<-b.doneChan
 }
 
-func (b *bombardier) printIntro() {
-	if b.conf.testType() == counted {
+func (b *Bombardier) PrintIntro() {
+	if b.conf.TestType() == counted {
 		fmt.Fprintf(b.out,
 			"Bombarding %v with %v request(s) using %v connection(s)\n",
 			b.conf.url, *b.conf.numReqs, b.conf.numConns)
-	} else if b.conf.testType() == timed {
+	} else if b.conf.TestType() == timed {
 		fmt.Fprintf(b.out, "Bombarding %v for %v using %v connection(s)\n",
 			b.conf.url, *b.conf.duration, b.conf.numConns)
 	}
 }
 
-func (b *bombardier) gatherInfo() internal.TestInfo {
+func (b *Bombardier) GatherInfo() internal.TestInfo {
 	info := internal.TestInfo{
 		Spec: internal.Spec{
 			NumberOfConnections: b.conf.numConns,
@@ -393,7 +393,7 @@ func (b *bombardier) gatherInfo() internal.TestInfo {
 		},
 	}
 
-	testType := b.conf.testType()
+	testType := b.conf.TestType()
 	info.Spec.TestType = internal.TestType(testType)
 	if testType == timed {
 		info.Spec.TestDuration = *b.conf.duration
@@ -411,7 +411,7 @@ func (b *bombardier) gatherInfo() internal.TestInfo {
 		}
 	}
 
-	for _, ewc := range b.errors.byFrequency() {
+	for _, ewc := range b.errors.ByFrequency() {
 		info.Result.Errors = append(info.Result.Errors,
 			internal.ErrorWithCount{
 				Error: ewc.error,
@@ -422,31 +422,31 @@ func (b *bombardier) gatherInfo() internal.TestInfo {
 	return info
 }
 
-func (b *bombardier) printStats() {
-	info := b.gatherInfo()
+func (b *Bombardier) PrintStats() {
+	info := b.GatherInfo()
 	err := b.template.Execute(b.out, info)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 	}
 }
 
-func (b *bombardier) redirectOutputTo(out io.Writer) {
+func (b *Bombardier) RedirectOutputTo(out io.Writer) {
 	b.bar.Output = out
 	b.out = out
 }
 
-func (b *bombardier) disableOutput() {
-	b.redirectOutputTo(ioutil.Discard)
+func (b *Bombardier) DisableOutput() {
+	b.RedirectOutputTo(ioutil.Discard)
 	b.bar.NotPrint = true
 }
 
 func main() {
-	cfg, err := parser.parse(os.Args)
+	cfg, err := parser.Parse(os.Args)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(exitFailure)
 	}
-	bombardier, err := newBombardier(cfg)
+	bombardier, err := NewBombardier(cfg)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(exitFailure)
@@ -455,10 +455,10 @@ func main() {
 	signal.Notify(c, os.Interrupt)
 	go func() {
 		<-c
-		bombardier.barrier.cancel()
+		bombardier.barrier.Cancel()
 	}()
-	bombardier.bombard()
+	bombardier.Bombard()
 	if bombardier.conf.printResult {
-		bombardier.printStats()
+		bombardier.PrintStats()
 	}
 }

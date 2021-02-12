@@ -11,21 +11,21 @@ import (
 )
 
 func TestShouldReturnNilIfNoHeadersWhereSet(t *testing.T) {
-	h := new(headersList)
-	if headersToFastHTTPHeaders(h) != nil {
+	h := new(HeadersList)
+	if HeadersToFastHTTPHeaders(h) != nil {
 		t.Fail()
 	}
 }
 
 func TestShouldReturnEmptyHeadersIfNoHeaadersWhereSet(t *testing.T) {
-	h := new(headersList)
-	if len(headersToHTTPHeaders(h)) != 0 {
+	h := new(HeadersList)
+	if len(HeadersToHTTPHeaders(h)) != 0 {
 		t.Fail()
 	}
 }
 
 func TestShouldProperlyConvertToHttpHeaders(t *testing.T) {
-	h := new(headersList)
+	h := new(HeadersList)
 	for _, hs := range []string{
 		"Content-Type: application/json", "Custom-Header: xxx42xxx",
 	} {
@@ -33,7 +33,7 @@ func TestShouldProperlyConvertToHttpHeaders(t *testing.T) {
 			t.Error(err)
 		}
 	}
-	fh := headersToFastHTTPHeaders(h)
+	fh := HeadersToFastHTTPHeaders(h)
 	{
 		e, a := []byte("application/json"), fh.Peek("Content-Type")
 		if !bytes.Equal(e, a) {
@@ -44,7 +44,7 @@ func TestShouldProperlyConvertToHttpHeaders(t *testing.T) {
 		t.Errorf("Expected %v, but got %v", e, a)
 	}
 
-	nh := headersToHTTPHeaders(h)
+	nh := HeadersToHTTPHeaders(h)
 	{
 		e, a := "application/json", nh.Get("Content-Type")
 		if e != a {
@@ -88,10 +88,10 @@ func TestHTTP2Client(t *testing.T) {
 	// TODO(codesenberg): this should be fixed later
 	time.Sleep(100 * time.Millisecond)
 	bytesRead, bytesWritten := int64(0), int64(0)
-	c := newHTTPClient(&clientOpts{
+	c := NewHTTPClient(&ClientOpts{
 		HTTP2: true,
 
-		headers: new(headersList),
+		headers: new(HeadersList),
 		url:     "https://" + url,
 		method:  "GET",
 		tlsConfig: &tls.Config{
@@ -103,7 +103,7 @@ func TestHTTP2Client(t *testing.T) {
 		bytesRead:    &bytesRead,
 		bytesWritten: &bytesWritten,
 	})
-	code, _, err := c.do()
+	code, _, err := c.Do()
 	if err != nil {
 		t.Error(err)
 		return
@@ -145,10 +145,10 @@ func TestHTTP1Clients(t *testing.T) {
 	defer s.Close()
 
 	bytesRead, bytesWritten := int64(0), int64(0)
-	cc := &clientOpts{
+	cc := &ClientOpts{
 		HTTP2: false,
 
-		headers: new(headersList),
+		headers: new(HeadersList),
 		url:     s.URL,
 		method:  "GET",
 
@@ -157,13 +157,13 @@ func TestHTTP1Clients(t *testing.T) {
 		bytesRead:    &bytesRead,
 		bytesWritten: &bytesWritten,
 	}
-	clients := []client{
-		newHTTPClient(cc),
-		newFastHTTPClient(cc),
+	clients := []Client{
+		NewHTTPClient(cc),
+		NewFastHTTPClient(cc),
 	}
 	for _, c := range clients {
 		bytesRead, bytesWritten = 0, 0
-		code, _, err := c.do()
+		code, _, err := c.Do()
 		if err != nil {
 			t.Error(err)
 			return

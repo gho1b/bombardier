@@ -9,28 +9,28 @@ var (
 	}
 )
 
-type format interface{}
-type knownFormat string
+type Format interface{}
+type KnownFormat string
 
-func (kf knownFormat) template() []byte {
+func (kf KnownFormat) Template() []byte {
 	return templates[string(kf)]
 }
 
-type filePath string
-type userDefinedTemplate filePath
+type FilePath string
+type UserDefinedTemplate FilePath
 
-func formatFromString(formatSpec string) format {
+func FormatFromString(formatSpec string) Format {
 	const prefix = "path:"
 	if strings.HasPrefix(formatSpec, prefix) {
-		return userDefinedTemplate(formatSpec[len(prefix):])
+		return UserDefinedTemplate(formatSpec[len(prefix):])
 	}
 	switch formatSpec {
 	case "pt", "plain-text":
-		return knownFormat("plain-text")
+		return KnownFormat("plain-text")
 	case "j", "json":
-		return knownFormat("json")
+		return KnownFormat("json")
 	}
-	// nil represents unknown format
+	// nil represents unknown Format
 	return nil
 }
 
@@ -70,9 +70,9 @@ const (
 "numberOfConnections":{{ .NumberOfConnections }}
 
 {{- if .IsTimedTest -}}
-,"testType":"timed","testDurationSeconds":{{ .TestDuration.Seconds }}
+,"TestType":"timed","testDurationSeconds":{{ .TestDuration.Seconds }}
 {{- else -}}
-,"testType":"number-of-requests","numberOfRequests":{{ .NumberOfRequests }}
+,"TestType":"number-of-requests","numberOfRequests":{{ .NumberOfRequests }}
 {{- end -}}
 
 ,"method":"{{ .Method }}","url":{{ .URL | printf "%q" }}
@@ -102,13 +102,13 @@ const (
 ,"stream":{{ .Stream }},"timeoutSeconds":{{ .Timeout.Seconds }}
 
 {{- if .IsFastHTTP -}}
-,"client":"fasthttp"
+,"Client":"fasthttp"
 {{- end -}}
 {{- if .IsNetHTTPV1 -}}
-,"client":"net/http.v1"
+,"Client":"net/http.v1"
 {{- end -}}
 {{- if .IsNetHTTPV2 -}}
-,"client":"net/http.v2"
+,"Client":"net/http.v2"
 {{- end -}}
 
 {{- with .Rate -}}

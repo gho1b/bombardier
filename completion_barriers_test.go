@@ -8,17 +8,17 @@ import (
 
 func TestCouintingCompletionBarrierWait(t *testing.T) {
 	parties := uint64(10)
-	b := newCountingCompletionBarrier(1000)
+	b := NewCountingCompletionBarrier(1000)
 	for i := uint64(0); i < parties; i++ {
 		go func() {
-			for b.tryGrabWork() {
-				b.jobDone()
+			for b.TryGrabWork() {
+				b.JobDone()
 			}
 		}()
 	}
 	wc := make(chan struct{})
 	go func() {
-		<-b.done()
+		<-b.Done()
 		wc <- struct{}{}
 	}()
 	select {
@@ -35,19 +35,19 @@ func TestTimedCompletionBarrierWait(t *testing.T) {
 	timeout := duration * 2
 	err := 15 * time.Millisecond
 	sleepDuration := 2 * time.Millisecond
-	b := newTimedCompletionBarrier(duration)
+	b := NewTimedCompletionBarrier(duration)
 	for i := uint64(0); i < parties; i++ {
 		go func() {
-			for b.tryGrabWork() {
+			for b.TryGrabWork() {
 				time.Sleep(sleepDuration)
-				b.jobDone()
+				b.JobDone()
 			}
 		}()
 	}
 	wc := make(chan time.Duration)
 	go func() {
 		start := time.Now()
-		<-b.done()
+		<-b.Done()
 		wc <- time.Since(start)
 	}()
 	select {
@@ -61,15 +61,15 @@ func TestTimedCompletionBarrierWait(t *testing.T) {
 }
 
 func TestTimeBarrierCancel(t *testing.T) {
-	b := newTimedCompletionBarrier(9000 * time.Second)
+	b := NewTimedCompletionBarrier(9000 * time.Second)
 	sleepTime := 100 * time.Millisecond
 	go func() {
 		time.Sleep(sleepTime)
-		b.cancel()
+		b.Cancel()
 	}()
 	select {
-	case <-b.done():
-		if c := b.completed(); c != 1.0 {
+	case <-b.Done():
+		if c := b.Completed(); c != 1.0 {
 			t.Error(c)
 		}
 	case <-time.After(sleepTime * 2):
@@ -79,22 +79,22 @@ func TestTimeBarrierCancel(t *testing.T) {
 
 func TestCountedBarrierCancel(t *testing.T) {
 	parties := uint64(10)
-	b := newCountingCompletionBarrier(math.MaxUint64)
+	b := NewCountingCompletionBarrier(math.MaxUint64)
 	sleepTime := 100 * time.Millisecond
 	for i := uint64(0); i < parties; i++ {
 		go func() {
-			for b.tryGrabWork() {
-				b.jobDone()
+			for b.TryGrabWork() {
+				b.JobDone()
 			}
 		}()
 	}
 	go func() {
 		time.Sleep(sleepTime)
-		b.cancel()
+		b.Cancel()
 	}()
 	select {
-	case <-b.done():
-		if c := b.completed(); c != 1.0 {
+	case <-b.Done():
+		if c := b.Completed(); c != 1.0 {
 			t.Error(c)
 		}
 	case <-time.After(5 * time.Second):
@@ -110,7 +110,7 @@ func TestTimeBarrierPanicOnBadDuration(t *testing.T) {
 			t.Fail()
 		}
 	}()
-	newTimedCompletionBarrier(-1 * time.Second)
+	NewTimedCompletionBarrier(-1 * time.Second)
 	t.Error("unreachable")
 	t.Fail()
 }

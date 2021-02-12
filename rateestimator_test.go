@@ -16,7 +16,7 @@ func TestRateEstimatorPanicWithZeroRate(t *testing.T) {
 			t.Error(panicZeroRate, pv)
 		}
 	}()
-	_, _ = estimate(0, 10*time.Second)
+	_, _ = Estimate(0, 10*time.Second)
 	t.Error("should fail with rate == 0")
 }
 
@@ -31,7 +31,7 @@ func TestRateEstimatorPanicWithNegativeAdjustTo(t *testing.T) {
 			t.Error(panicNegativeAdjustTo, pv)
 		}
 	}()
-	_, _ = estimate(10, -10*time.Second)
+	_, _ = Estimate(10, -10*time.Second)
 	t.Error("should fail with adjustTo <= 0")
 }
 
@@ -58,7 +58,7 @@ func TestRateEstimatorAccuracy(t *testing.T) {
 		{1000000, 100 * time.Millisecond, 100000, 100 * time.Millisecond},
 	}
 	for _, exp := range expectations {
-		actualFillInterval, actualQuantum := estimate(exp.rate, exp.adjustTo)
+		actualFillInterval, actualQuantum := Estimate(exp.rate, exp.adjustTo)
 		if actualFillInterval != exp.expectedFillInterval ||
 			actualQuantum != exp.expectedQuantum {
 			t.Log("Expected: ", exp.expectedQuantum, exp.expectedFillInterval)

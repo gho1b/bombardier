@@ -4,9 +4,9 @@ import (
 	"crypto/tls"
 )
 
-// readClientCert - helper function to read client certificate
+// ReadClientCert - helper function to read Client certificate
 // from pem formatted certPath and keyPath files
-func readClientCert(certPath, keyPath string) ([]tls.Certificate, error) {
+func ReadClientCert(certPath, keyPath string) ([]tls.Certificate, error) {
 	if certPath != "" && keyPath != "" {
 		// load keypair
 		cert, err := tls.LoadX509KeyPair(certPath, keyPath)
@@ -19,10 +19,10 @@ func readClientCert(certPath, keyPath string) ([]tls.Certificate, error) {
 	return nil, nil
 }
 
-// generateTLSConfig - helper function to generate a TLS configuration based on
+// GenerateTLSConfig - helper function to generate a TLS configuration based on
 // config
-func generateTLSConfig(c config) (*tls.Config, error) {
-	certs, err := readClientCert(c.certPath, c.keyPath)
+func GenerateTLSConfig(c Config) (*tls.Config, error) {
+	certs, err := ReadClientCert(c.certPath, c.keyPath)
 	if err != nil {
 		return nil, err
 	}

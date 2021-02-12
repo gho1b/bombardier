@@ -10,7 +10,7 @@ const (
 	panicNegativeAdjustTo = "adjustTo can't be negative or zero"
 )
 
-func estimate(rate uint64, adjustTo time.Duration) (time.Duration, uint64) {
+func Estimate(rate uint64, adjustTo time.Duration) (time.Duration, uint64) {
 	if rate == 0 {
 		panic(panicZeroRate)
 	}

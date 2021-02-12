@@ -7,15 +7,15 @@ import (
 	"time"
 )
 
-type config struct {
+type Config struct {
 	numConns                       uint64
 	numReqs                        *uint64
-	disableKeepAlives         bool
+	disableKeepAlives              bool
 	duration                       *time.Duration
 	url, method, certPath, keyPath string
 	body, bodyFilePath             string
 	stream                         bool
-	headers                        *headersList
+	headers                        *HeadersList
 	timeout                        time.Duration
 	// TODO(codesenberg): printLatencies should probably be
 	// re(named&maked) into printPercentiles or even let
@@ -23,39 +23,39 @@ type config struct {
 	// calculate for [0.5, 0.75, 0.9, 0.99]
 	printLatencies, insecure bool
 	rate                     *uint64
-	clientType               clientTyp
+	clientType               ClientTyp
 
 	printIntro, printProgress, printResult bool
 
-	format format
+	format Format
 }
 
-type testTyp int
+type TestTyp int
 
 const (
-	none testTyp = iota
+	none TestTyp = iota
 	timed
 	counted
 )
 
-type invalidHTTPMethodError struct {
+type InvalidHTTPMethodError struct {
 	method string
 }
 
-func (i *invalidHTTPMethodError) Error() string {
+func (i *InvalidHTTPMethodError) Error() string {
 	return fmt.Sprintf("Unknown HTTP method: %v", i.method)
 }
 
-func (c *config) checkArgs() error {
-	c.checkOrSetDefaultTestType()
+func (c *Config) CheckArgs() error {
+	c.CheckOrSetDefaultTestType()
 
 	checks := []func() error{
-		c.checkURL,
-		c.checkRate,
-		c.checkRunParameters,
-		c.checkTimeoutDuration,
-		c.checkHTTPParameters,
-		c.checkCertPaths,
+		c.CheckURL,
+		c.CheckRate,
+		c.CheckRunParameters,
+		c.CheckTimeoutDuration,
+		c.CheckHTTPParameters,
+		c.CheckCertPaths,
 	}
 
 	for _, check := range checks {
@@ -67,13 +67,13 @@ func (c *config) checkArgs() error {
 	return nil
 }
 
-func (c *config) checkOrSetDefaultTestType() {
-	if c.testType() == none {
+func (c *Config) CheckOrSetDefaultTestType() {
+	if c.TestType() == none {
 		c.duration = &defaultTestDuration
 	}
 }
 
-func (c *config) testType() testTyp {
+func (c *Config) TestType() TestTyp {
 	typ := none
 	if c.numReqs != nil {
 		typ = counted
@@ -83,7 +83,7 @@ func (c *config) testType() testTyp {
 	return typ
 }
 
-func (c *config) checkURL() error {
+func (c *Config) CheckURL() error {
 	url, err := url.Parse(c.url)
 	if err != nil {
 		return err
@@ -95,38 +95,38 @@ func (c *config) checkURL() error {
 	return nil
 }
 
-func (c *config) checkRate() error {
+func (c *Config) CheckRate() error {
 	if c.rate != nil && *c.rate < 1 {
 		return errZeroRate
 	}
 	return nil
 }
 
-func (c *config) checkRunParameters() error {
+func (c *Config) CheckRunParameters() error {
 	if c.numConns < uint64(1) {
 		return errInvalidNumberOfConns
 	}
-	if c.testType() == counted && *c.numReqs < uint64(1) {
+	if c.TestType() == counted && *c.numReqs < uint64(1) {
 		return errInvalidNumberOfRequests
 	}
-	if c.testType() == timed && *c.duration < time.Second {
+	if c.TestType() == timed && *c.duration < time.Second {
 		return errInvalidTestDuration
 	}
 	return nil
 }
 
-func (c *config) checkTimeoutDuration() error {
+func (c *Config) CheckTimeoutDuration() error {
 	if c.timeout < 0 {
 		return errNegativeTimeout
 	}
 	return nil
 }
 
-func (c *config) checkHTTPParameters() error {
-	if !allowedHTTPMethod(c.method) {
-		return &invalidHTTPMethodError{method: c.method}
+func (c *Config) CheckHTTPParameters() error {
+	if !AllowedHTTPMethod(c.method) {
+		return &InvalidHTTPMethodError{method: c.method}
 	}
-	if !canHaveBody(c.method) && (c.body != "" || c.bodyFilePath != "") {
+	if !CanHaveBody(c.method) && (c.body != "" || c.bodyFilePath != "") {
 		return errBodyNotAllowed
 	}
 	if c.body != "" && c.bodyFilePath != "" {
@@ -135,7 +135,7 @@ func (c *config) checkHTTPParameters() error {
 	return nil
 }
 
-func (c *config) checkCertPaths() error {
+func (c *Config) CheckCertPaths() error {
 	if c.certPath != "" && c.keyPath == "" {
 		return errNoPathToKey
 	} else if c.certPath == "" && c.keyPath != "" {
@@ -144,29 +144,29 @@ func (c *config) checkCertPaths() error {
 	return nil
 }
 
-func (c *config) timeoutMillis() uint64 {
+func (c *Config) TimeoutMillis() uint64 {
 	return uint64(c.timeout.Nanoseconds() / 1000)
 }
 
-func allowedHTTPMethod(method string) bool {
+func AllowedHTTPMethod(method string) bool {
 	i := sort.SearchStrings(httpMethods, method)
 	return i < len(httpMethods) && httpMethods[i] == method
 }
 
-func canHaveBody(method string) bool {
+func CanHaveBody(method string) bool {
 	i := sort.SearchStrings(cantHaveBody, method)
 	return !(i < len(cantHaveBody) && cantHaveBody[i] == method)
 }
 
-type clientTyp int
+type ClientTyp int
 
 const (
-	fhttp clientTyp = iota
+	fhttp ClientTyp = iota
 	nhttp1
 	nhttp2
 )
 
-func (ct clientTyp) String() string {
+func (ct ClientTyp) String() string {
 	switch ct {
 	case fhttp:
 		return "FastHTTP"
@@ -175,5 +175,5 @@ func (ct clientTyp) String() string {
 	case nhttp2:
 		return "net/http v2.0"
 	}
-	return "unknown client"
+	return "unknown Client"
 }

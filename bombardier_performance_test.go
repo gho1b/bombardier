@@ -9,8 +9,8 @@ import (
 
 var (
 	serverPort = flag.String("port", "8080", "port to use for benchmarks")
-	clientType = flag.String("client-type", "fasthttp",
-		"client to use in benchmarks")
+	clientType = flag.String("Client-type", "fasthttp",
+		"Client to use in benchmarks")
 )
 
 var (
@@ -20,12 +20,12 @@ var (
 
 func BenchmarkBombardierSingleReqPerf(b *testing.B) {
 	addr := "localhost:" + *serverPort
-	benchmarkFireRequest(config{
+	benchmarkFireRequest(Config{
 		numConns:       defaultNumberOfConns,
 		numReqs:        nil,
 		duration:       &longDuration,
 		url:            "http://" + addr,
-		headers:        new(headersList),
+		headers:        new(HeadersList),
 		timeout:        defaultTimeout,
 		method:         "GET",
 		body:           "",
@@ -36,12 +36,12 @@ func BenchmarkBombardierSingleReqPerf(b *testing.B) {
 
 func BenchmarkBombardierRateLimitPerf(b *testing.B) {
 	addr := "localhost:" + *serverPort
-	benchmarkFireRequest(config{
+	benchmarkFireRequest(Config{
 		numConns:       defaultNumberOfConns,
 		numReqs:        nil,
 		duration:       &longDuration,
 		url:            "http://" + addr,
-		headers:        new(headersList),
+		headers:        new(HeadersList),
 		timeout:        defaultTimeout,
 		method:         "GET",
 		body:           "",
@@ -51,19 +51,19 @@ func BenchmarkBombardierRateLimitPerf(b *testing.B) {
 	}, b)
 }
 
-func benchmarkFireRequest(c config, bm *testing.B) {
-	b, e := newBombardier(c)
+func benchmarkFireRequest(c Config, bm *testing.B) {
+	b, e := NewBombardier(c)
 	if e != nil {
 		bm.Error(e)
 	}
-	b.disableOutput()
+	b.DisableOutput()
 	bm.SetParallelism(int(defaultNumberOfConns) / runtime.NumCPU())
 	bm.ResetTimer()
 	bm.RunParallel(func(pb *testing.PB) {
-		done := b.barrier.done()
+		done := b.barrier.Done()
 		for pb.Next() {
-			b.ratelimiter.pace(done)
-			b.performSingleRequest()
+			b.ratelimiter.Pace(done)
+			b.PerformSingleRequest()
 		}
 	})
 }

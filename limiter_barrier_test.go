@@ -12,8 +12,8 @@ func TestNoopLimiterCounterBarrierCombination(t *testing.T) {
 	}
 	done := make(chan struct{})
 	for _, count := range expectations {
-		b := newCountingCompletionBarrier(count)
-		var lim limiter = &nooplimiter{}
+		b := NewCountingCompletionBarrier(count)
+		var lim Limiter = &Nooplimiter{}
 		counter := uint64(0)
 		numParties := 10
 		var wg sync.WaitGroup
@@ -21,10 +21,10 @@ func TestNoopLimiterCounterBarrierCombination(t *testing.T) {
 		for i := 0; i < numParties; i++ {
 			go func() {
 				defer wg.Done()
-				for b.tryGrabWork() {
-					lim.pace(done)
+				for b.TryGrabWork() {
+					lim.Pace(done)
 					atomic.AddUint64(&counter, 1)
-					b.jobDone()
+					b.JobDone()
 				}
 			}()
 		}
@@ -53,8 +53,8 @@ func TestBucketLimiterCounterBarrierCombination(t *testing.T) {
 		exp := expectations[i]
 		go func() {
 			defer expWg.Done()
-			b := newCountingCompletionBarrier(exp.count)
-			lim := newBucketLimiter(exp.rate)
+			b := NewCountingCompletionBarrier(exp.count)
+			lim := NewBucketLimiter(exp.rate)
 			counter := uint64(0)
 			numParties := 10
 			var wg sync.WaitGroup
@@ -62,10 +62,10 @@ func TestBucketLimiterCounterBarrierCombination(t *testing.T) {
 			for i := 0; i < numParties; i++ {
 				go func() {
 					defer wg.Done()
-					for b.tryGrabWork() {
-						lim.pace(done)
+					for b.TryGrabWork() {
+						lim.Pace(done)
 						atomic.AddUint64(&counter, 1)
-						b.jobDone()
+						b.JobDone()
 					}
 				}()
 			}

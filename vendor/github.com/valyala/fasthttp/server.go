@@ -1434,7 +1434,6 @@ func (s *Server) ServeTLS(ln net.Listener, certFile, keyFile string) error {
 		return errNoCertOrKeyProvided
 	}
 	s.tlsConfig.BuildNameToCertificate()
-	s.tlsConfig.ClientAuth = tls.RequireAnyClientCert
 
 	return s.Serve(
 		tls.NewListener(ln, s.tlsConfig),

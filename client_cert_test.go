@@ -27,8 +27,8 @@ func TestGenerateTLSConfig(t *testing.T) {
 		},
 	}
 	for _, e := range expectations {
-		_, r := generateTLSConfig(
-			config{
+		_, r := GenerateTLSConfig(
+			Config{
 				url:      "https://doesnt.exist.com",
 				certPath: e.certPath,
 				keyPath:  e.keyPath,

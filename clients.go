@@ -13,13 +13,13 @@ import (
 	"golang.org/x/net/http2"
 )
 
-type client interface {
-	do() (code int, usTaken uint64, err error)
+type Client interface {
+	Do() (code int, usTaken uint64, err error)
 }
 
-type bodyStreamProducer func() (io.ReadCloser, error)
+type BodyStreamProducer func() (io.ReadCloser, error)
 
-type clientOpts struct {
+type ClientOpts struct {
 	HTTP2 bool
 
 	maxConns          uint64
@@ -27,27 +27,27 @@ type clientOpts struct {
 	tlsConfig         *tls.Config
 	disableKeepAlives bool
 
-	headers     *headersList
+	headers     *HeadersList
 	url, method string
 
 	body    *string
-	bodProd bodyStreamProducer
+	bodProd BodyStreamProducer
 
 	bytesRead, bytesWritten *int64
 }
 
-type fasthttpClient struct {
+type FasthttpClient struct {
 	client *fasthttp.HostClient
 
 	headers                  *fasthttp.RequestHeader
 	host, requestURI, method string
 
 	body    *string
-	bodProd bodyStreamProducer
+	bodProd BodyStreamProducer
 }
 
-func newFastHTTPClient(opts *clientOpts) client {
-	c := new(fasthttpClient)
+func NewFastHTTPClient(opts *ClientOpts) Client {
+	c := new(FasthttpClient)
 	u, err := url.Parse(opts.url)
 	if err != nil {
 		// opts.url guaranteed to be valid at this point
@@ -63,17 +63,17 @@ func newFastHTTPClient(opts *clientOpts) client {
 		WriteTimeout:                  opts.timeout,
 		DisableHeaderNamesNormalizing: true,
 		TLSConfig:                     opts.tlsConfig,
-		Dial: fasthttpDialFunc(
+		Dial: FasthttpDialFunc(
 			opts.bytesRead, opts.bytesWritten,
 		),
 	}
-	c.headers = headersToFastHTTPHeaders(opts.headers)
+	c.headers = HeadersToFastHTTPHeaders(opts.headers)
 	c.method, c.body = opts.method, opts.body
 	c.bodProd = opts.bodProd
-	return client(c)
+	return Client(c)
 }
 
-func (c *fasthttpClient) do() (
+func (c *FasthttpClient) Do() (
 	code int, usTaken uint64, err error,
 ) {
 	// prepare the request
@@ -114,7 +114,7 @@ func (c *fasthttpClient) do() (
 	return
 }
 
-type httpClient struct {
+type HttpClient struct {
 	client *http.Client
 
 	headers http.Header
@@ -122,17 +122,17 @@ type httpClient struct {
 	method  string
 
 	body    *string
-	bodProd bodyStreamProducer
+	bodProd BodyStreamProducer
 }
 
-func newHTTPClient(opts *clientOpts) client {
-	c := new(httpClient)
+func NewHTTPClient(opts *ClientOpts) Client {
+	c := new(HttpClient)
 	tr := &http.Transport{
 		TLSClientConfig:     opts.tlsConfig,
 		MaxIdleConnsPerHost: int(opts.maxConns),
 		DisableKeepAlives:   opts.disableKeepAlives,
 	}
-	tr.DialContext = httpDialContextFunc(opts.bytesRead, opts.bytesWritten)
+	tr.DialContext = HttpDialContextFunc(opts.bytesRead, opts.bytesWritten)
 	if opts.HTTP2 {
 		_ = http2.ConfigureTransport(tr)
 	} else {
@@ -150,7 +150,7 @@ func newHTTPClient(opts *clientOpts) client {
 	}
 	c.client = cl
 
-	c.headers = headersToHTTPHeaders(opts.headers)
+	c.headers = HeadersToHTTPHeaders(opts.headers)
 	c.method, c.body, c.bodProd = opts.method, opts.body, opts.bodProd
 	var err error
 	c.url, err = url.Parse(opts.url)
@@ -159,10 +159,10 @@ func newHTTPClient(opts *clientOpts) client {
 		panic(err)
 	}
 
-	return client(c)
+	return Client(c)
 }
 
-func (c *httpClient) do() (
+func (c *HttpClient) Do() (
 	code int, usTaken uint64, err error,
 ) {
 	req := &http.Request{}
@@ -208,7 +208,7 @@ func (c *httpClient) do() (
 	return
 }
 
-func headersToFastHTTPHeaders(h *headersList) *fasthttp.RequestHeader {
+func HeadersToFastHTTPHeaders(h *HeadersList) *fasthttp.RequestHeader {
 	if len(*h) == 0 {
 		return nil
 	}
@@ -219,7 +219,7 @@ func headersToFastHTTPHeaders(h *headersList) *fasthttp.RequestHeader {
 	return res
 }
 
-func headersToHTTPHeaders(h *headersList) http.Header {
+func HeadersToHTTPHeaders(h *HeadersList) http.Header {
 	if len(*h) == 0 {
 		return http.Header{}
 	}

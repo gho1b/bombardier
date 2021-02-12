@@ -7,39 +7,39 @@ import (
 )
 
 func TestErrorMapAdd(t *testing.T) {
-	m := newErrorMap()
-	err := errors.New("add")
-	m.add(err)
-	if c := m.get(err); c != 1 {
+	m := NewErrorMap()
+	err := errors.New("Add")
+	m.Add(err)
+	if c := m.Get(err); c != 1 {
 		t.Error(c)
 	}
 }
 
 func TestErrorMapGet(t *testing.T) {
-	m := newErrorMap()
-	err := errors.New("get")
-	if c := m.get(err); c != 0 {
+	m := NewErrorMap()
+	err := errors.New("Get")
+	if c := m.Get(err); c != 0 {
 		t.Error(c)
 	}
 }
 
 func TestByFrequency(t *testing.T) {
-	m := newErrorMap()
+	m := NewErrorMap()
 	a := errors.New("A")
 	b := errors.New("B")
 	c := errors.New("C")
-	m.add(a)
-	m.add(a)
-	m.add(b)
-	m.add(b)
-	m.add(b)
-	m.add(c)
-	e := errorsByFrequency{
+	m.Add(a)
+	m.Add(a)
+	m.Add(b)
+	m.Add(b)
+	m.Add(b)
+	m.Add(c)
+	e := ErrorsByFrequency{
 		{"B", 3},
 		{"A", 2},
 		{"C", 1},
 	}
-	if a := m.byFrequency(); !reflect.DeepEqual(a, e) {
+	if a := m.ByFrequency(); !reflect.DeepEqual(a, e) {
 		t.Logf("Expected: %+v", e)
 		t.Logf("Got: %+v", a)
 		t.Fail()
@@ -47,7 +47,7 @@ func TestByFrequency(t *testing.T) {
 }
 
 func TestErrorWithCountToStringConversion(t *testing.T) {
-	ewc := errorWithCount{"A", 1}
+	ewc := ErrorWithCount{"A", 1}
 	exp := "<A:1>"
 	if act := ewc.String(); act != exp {
 		t.Logf("Expected: %+v", exp)
@@ -57,24 +57,24 @@ func TestErrorWithCountToStringConversion(t *testing.T) {
 }
 
 func BenchmarkErrorMapAdd(b *testing.B) {
-	m := newErrorMap()
+	m := NewErrorMap()
 	err := errors.New("benchmark")
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			m.add(err)
+			m.Add(err)
 		}
 	})
 }
 
 func BenchmarkErrorMapGet(b *testing.B) {
-	m := newErrorMap()
+	m := NewErrorMap()
 	err := errors.New("benchmark")
-	m.add(err)
+	m.Add(err)
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			m.get(err)
+			m.Get(err)
 		}
 	})
 }

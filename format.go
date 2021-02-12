@@ -4,31 +4,31 @@ import (
 	"fmt"
 )
 
-type units struct {
+type Units struct {
 	scale uint64
 	base  string
 	units []string
 }
 
 var (
-	binaryUnits = &units{
+	binaryUnits = &Units{
 		scale: 1024,
 		base:  "",
 		units: []string{"KB", "MB", "GB", "TB", "PB"},
 	}
-	timeUnitsUs = &units{
+	timeUnitsUs = &Units{
 		scale: 1000,
 		base:  "us",
 		units: []string{"ms", "s"},
 	}
-	timeUnitsS = &units{
+	timeUnitsS = &Units{
 		scale: 60,
 		base:  "s",
 		units: []string{"m", "h"},
 	}
 )
 
-func formatUnits(n float64, m *units, prec int) string {
+func FormatUnits(n float64, m *Units, prec int) string {
 	amt := n
 	unit := m.base
 
@@ -41,15 +41,15 @@ func formatUnits(n float64, m *units, prec int) string {
 	return fmt.Sprintf("%.*f%s", prec, amt, unit)
 }
 
-func formatBinary(n float64) string {
-	return formatUnits(n, binaryUnits, 2)
+func FormatBinary(n float64) string {
+	return FormatUnits(n, binaryUnits, 2)
 }
 
-func formatTimeUs(n float64) string {
+func FormatTimeUs(n float64) string {
 	units := timeUnitsUs
 	if n >= 1000000.0 {
 		n /= 1000000.0
 		units = timeUnitsS
 	}
-	return formatUnits(n, units, 2)
+	return FormatUnits(n, units, 2)
 }

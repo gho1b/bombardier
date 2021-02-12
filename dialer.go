@@ -6,12 +6,12 @@ import (
 	"sync/atomic"
 )
 
-type countingConn struct {
+type CountingConn struct {
 	net.Conn
 	bytesRead, bytesWritten *int64
 }
 
-func (cc *countingConn) Read(b []byte) (n int, err error) {
+func (cc *CountingConn) Read(b []byte) (n int, err error) {
 	n, err = cc.Conn.Read(b)
 
 	if err == nil {
@@ -21,7 +21,7 @@ func (cc *countingConn) Read(b []byte) (n int, err error) {
 	return
 }
 
-func (cc *countingConn) Write(b []byte) (n int, err error) {
+func (cc *CountingConn) Write(b []byte) (n int, err error) {
 	n, err = cc.Conn.Write(b)
 
 	if err == nil {
@@ -31,7 +31,7 @@ func (cc *countingConn) Write(b []byte) (n int, err error) {
 	return
 }
 
-var fasthttpDialFunc = func(
+var FasthttpDialFunc = func(
 	bytesRead, bytesWritten *int64,
 ) func(string) (net.Conn, error) {
 	return func(address string) (net.Conn, error) {
@@ -40,7 +40,7 @@ var fasthttpDialFunc = func(
 			return nil, err
 		}
 
-		wrappedConn := &countingConn{
+		wrappedConn := &CountingConn{
 			Conn:         conn,
 			bytesRead:    bytesRead,
 			bytesWritten: bytesWritten,
@@ -50,7 +50,7 @@ var fasthttpDialFunc = func(
 	}
 }
 
-var httpDialContextFunc = func(
+var HttpDialContextFunc = func(
 	bytesRead, bytesWritten *int64,
 ) func(context.Context, string, string) (net.Conn, error) {
 	dialer := &net.Dialer{}
@@ -60,7 +60,7 @@ var httpDialContextFunc = func(
 			return nil, err
 		}
 
-		wrappedConn := &countingConn{
+		wrappedConn := &CountingConn{
 			Conn:         conn,
 			bytesRead:    bytesRead,
 			bytesWritten: bytesWritten,

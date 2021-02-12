@@ -18,8 +18,8 @@ const (
 var (
 	version = "unspecified"
 
-	emptyConf = config{}
-	parser    = newKingpinParser()
+	emptyConf = Config{}
+	parser    = NewKingpinParser()
 
 	defaultTestDuration  = 10 * time.Second
 	defaultNumberOfConns = uint64(125)
@@ -51,7 +51,7 @@ var (
 		"Rate can't be less than 1")
 	errBodyProvidedTwice = errors.New("Use either --body or --body-file")
 
-	errInvalidHeaderFormat = errors.New("Invalid header format")
+	errInvalidHeaderFormat = errors.New("Invalid Header Format")
 	errEmptyPrintSpec      = errors.New(
 		"Empty print spec is not a valid print spec")
 )

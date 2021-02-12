@@ -2,6 +2,6 @@ package main
 
 import "io"
 
-type proxyReader struct {
+type ProxyReader struct {
 	io.Reader
 }

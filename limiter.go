@@ -8,31 +8,31 @@ import (
 	"github.com/juju/ratelimit"
 )
 
-type token uint64
+type Token uint64
 
 const (
-	brk token = iota
+	brk Token = iota
 	cont
 )
 
-type limiter interface {
-	pace(<-chan struct{}) token
+type Limiter interface {
+	Pace(<-chan struct{}) Token
 }
 
-type nooplimiter struct{}
+type Nooplimiter struct{}
 
-func (n *nooplimiter) pace(<-chan struct{}) token {
+func (n *Nooplimiter) Pace(<-chan struct{}) Token {
 	return cont
 }
 
-type bucketlimiter struct {
+type Bucketlimiter struct {
 	limiter   *ratelimit.Bucket
 	timerPool *sync.Pool
 }
 
-func newBucketLimiter(rate uint64) limiter {
-	fillInterval, quantum := estimate(rate, rateLimitInterval)
-	return &bucketlimiter{
+func NewBucketLimiter(rate uint64) Limiter {
+	fillInterval, quantum := Estimate(rate, rateLimitInterval)
+	return &Bucketlimiter{
 		ratelimit.NewBucketWithQuantum(
 			fillInterval, int64(quantum), int64(quantum),
 		),
@@ -44,7 +44,7 @@ func newBucketLimiter(rate uint64) limiter {
 	}
 }
 
-func (b *bucketlimiter) pace(done <-chan struct{}) (res token) {
+func (b *Bucketlimiter) Pace(done <-chan struct{}) (res Token) {
 	wd := b.limiter.Take(1)
 	if wd <= 0 {
 		return cont

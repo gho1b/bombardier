@@ -9,19 +9,19 @@ import (
 )
 
 func TestNullableUint64ConversionToString(t *testing.T) {
-	nilint := &nullableUint64{val: nil}
+	nilint := &NullableUint64{val: nil}
 	if s := nilint.String(); s != "nil" {
 		t.Errorf("Expected \"nil\", but got %v", s)
 	}
 	v := uint64(42)
-	nonnilint := &nullableUint64{val: &v}
+	nonnilint := &NullableUint64{val: &v}
 	if s, e := nonnilint.String(), strconv.FormatUint(v, 10); s != e {
 		t.Errorf("Expected %v, but got %v", e, s)
 	}
 }
 
 func TestNullableUint64Parsing(t *testing.T) {
-	n := &nullableUint64{}
+	n := &NullableUint64{}
 	if err := n.Set("-1"); err == nil {
 		t.Error("Should fail on negative values")
 	}
@@ -41,19 +41,19 @@ func TestNullableUint64Parsing(t *testing.T) {
 }
 
 func TestNullableDurationConversionToString(t *testing.T) {
-	nildur := &nullableDuration{val: nil}
+	nildur := &NullableDuration{val: nil}
 	if s := nildur.String(); s != "nil" {
 		t.Errorf("Expected \"nil\", but got %v", s)
 	}
 	d := time.Second
-	nonnildir := &nullableDuration{val: &d}
+	nonnildir := &NullableDuration{val: &d}
 	if s := nonnildir.String(); s != "1s" {
 		t.Errorf("Expected 1s, but got %v", s)
 	}
 }
 
 func TestNullableDurationParsing(t *testing.T) {
-	d := &nullableDuration{}
+	d := &NullableDuration{}
 	if err := d.Set(""); err == nil {
 		t.Error("Should fail on empty string")
 	}
@@ -66,13 +66,13 @@ func TestNullableDurationParsing(t *testing.T) {
 }
 
 func TestNullableStringConversionToString(t *testing.T) {
-	ns := new(nullableString)
+	ns := new(NullableString)
 	if act := ns.String(); act != nilStr {
-		t.Error("Unset nullableString should convert to \"nil\"")
+		t.Error("Unset NullableString should convert to \"nil\"")
 	}
 	someVal := "someval"
 	if err := ns.Set(someVal); err != nil {
-		t.Errorf("Couldn't set nullableString to %q", someVal)
+		t.Errorf("Couldn't set NullableString to %q", someVal)
 	}
 	if act := ns.String(); act != someVal {
 		t.Errorf("Expected %q, but got %q", someVal, act)
