@@ -7,4 +7,4 @@ Following options are available:
   -p, --port="8080"  port to use for benchmarks
   -s, --size=1024    size of response in bytes
 */
-package main
+package bombardier
